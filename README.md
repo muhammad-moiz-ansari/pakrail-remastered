@@ -46,3 +46,5 @@ Drafts remain in this tab's versioned `sessionStorage`. Existing storage keys an
 - Informational links open implemented local pages. Careers links to the verified official recruitment page. Unverified contact details, social accounts and railway policy text have not been invented.
 
 See `docs/ui-refresh.md` for implementation choices, validation and image replacement notes. Image attribution is also accessible from the website footer.
+
+The Our people page and shared footer additions are documented in `docs/our-people-footer.md`, including exact portrait mappings, temporary photography, breadcrumb route metadata, RABTA links and social icon sources.

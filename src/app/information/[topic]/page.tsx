@@ -3,17 +3,10 @@ import { notFound } from "next/navigation";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { stations } from "@/lib/booking";
 import { officialLinks } from "@/lib/home-content";
-const titles: Record<string, string> = {
-  about: "The journey connects us.",
-  people: "The people behind the journey.",
-  journey: "A different view of Pakistan.",
-  help: "A little help along the way.",
-  stations: "Find your station.",
-  credits: "Behind the photographs.",
-  sitemap: "Find your way around.",
-};
+import PeoplePage from "@/components/people-page";
+import { informationPages, isInformationTopic } from "@/lib/site-routes";
 export function generateStaticParams() {
-  return Object.keys(titles).map((topic) => ({ topic }));
+  return Object.keys(informationPages).map((topic) => ({ topic }));
 }
 export async function generateMetadata({
   params,
@@ -21,7 +14,9 @@ export async function generateMetadata({
   params: Promise<{ topic: string }>;
 }) {
   const { topic } = await params;
-  return { title: `${titles[topic] ?? "Information"} | Pakistan Railways` };
+  return {
+    title: `${isInformationTopic(topic) ? informationPages[topic].title : "Information"} | Pakistan Railways`,
+  };
 }
 export default async function Information({
   params,
@@ -29,11 +24,12 @@ export default async function Information({
   params: Promise<{ topic: string }>;
 }) {
   const { topic } = await params;
-  if (!titles[topic]) notFound();
+  if (!isInformationTopic(topic)) notFound();
+  if (topic === "people") return <PeoplePage />;
   return (
     <main id="main-content" className="information-page">
       <span className="eyebrow">PAKISTAN RAILWAYS</span>
-      <h1>{titles[topic]}</h1>
+      <h1>{informationPages[topic].title}</h1>
       {topic === "about" && (
         <>
           <p>
@@ -60,46 +56,6 @@ export default async function Information({
             <Link href="/information/people">
               Our people <ArrowRight size={16} />
             </Link>
-          </section>
-        </>
-      )}
-      {topic === "people" && (
-        <>
-          <p>
-            A rail journey is a team effort, from the station platform to the
-            carriage and the track ahead.
-          </p>
-          <section className="information-block">
-            <h2>Behind every journey</h2>
-            <p>
-              Train crews, station teams, maintenance specialists and passenger
-              support all contribute to the rail experience. This page
-              celebrates those roles without presenting individual staff
-              profiles.
-            </p>
-            <p>
-              Workplace photographs on the homepage are illustrative
-              rail-industry photographs from outside Pakistan; they are not
-              portraits of Pakistan Railways employees.
-            </p>
-          </section>
-          <section className="information-block">
-            <h2>Explore opportunities</h2>
-            <p>
-              Find recruitment notices, eligibility requirements and application
-              instructions on the official careers website.
-            </p>
-            <a
-              href={officialLinks.careers}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Pakistan Railways careers <ArrowUpRight size={15} />
-              <span className="sr-only">
-                {" "}
-                (external website, opens a new tab)
-              </span>
-            </a>
           </section>
         </>
       )}
@@ -395,6 +351,57 @@ export default async function Information({
               Bodoni Moda and Manrope are served locally under their SIL Open
               Font Licenses. The Pakistan Railways logo is the supplied asset,
               retained without alteration.
+            </p>
+          </section>
+          <section className="information-block">
+            <h2>Our people photography</h2>
+            <p>
+              The Our people cover reuses the credited Rawalpindi Railway
+              Station photograph by Rana Usman Shakoor (CC BY-SA 4.0). It is a
+              temporary station cover.
+            </p>
+            <p>
+              <a href="https://commons.wikimedia.org/wiki/File:Mohib_Ali_Assistant_Train_Driver_Pakistan_Railways.jpg">
+                Pakistan Railways assistant driver, 22 March 2023
+              </a>{" "}
+              — Syed.mazahirhaider,{" "}
+              <a href="https://creativecommons.org/licenses/by-sa/4.0/">
+                CC BY-SA 4.0
+              </a>
+              . The downloaded photograph is unchanged; responsive CSS cropping
+              is applied. It is used as temporary editorial staff photography
+              without implying endorsement.
+            </p>
+            <p>
+              The three leadership portraits were supplied for this project and
+              mapped by their role filenames. Their original files are retained
+              without alteration.
+            </p>
+          </section>
+          <section className="information-block">
+            <h2>App badges and social icons</h2>
+            <p>
+              Store badges are original artwork from{" "}
+              <a href="https://developer.apple.com/app-store/marketing/guidelines/">
+                Apple
+              </a>{" "}
+              and{" "}
+              <a href="https://partnermarketinghub.withgoogle.com/brands/google-play/">
+                Google Play
+              </a>
+              . Apple and the Apple logo are trademarks of Apple Inc.,
+              registered in the U.S. and other countries. App Store is a service
+              mark of Apple Inc. Google Play and the Google Play logo are
+              trademarks of Google LLC.
+            </p>
+            <p>
+              Facebook, X and Instagram SVGs are from{" "}
+              <a href="https://simpleicons.org/">Simple Icons (CC0)</a>. The
+              LinkedIn SVG is from{" "}
+              <a href="https://icons.getbootstrap.com/icons/linkedin/">
+                Bootstrap Icons (MIT)
+              </a>
+              . Original license notices are bundled with these assets.
             </p>
           </section>
         </>

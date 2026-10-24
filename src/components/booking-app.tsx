@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -9,23 +8,24 @@ import {
   Check,
   CheckCheck,
   ChevronDown,
-  ChevronRight,
   Clock,
   Info,
-  Leaf,
   LockKeyhole,
   MapPin,
   Plus,
   Printer,
   ShieldCheck,
-  Ticket,
   TrainFront,
   Trash2,
   Users,
   X,
 } from "lucide-react";
 import SearchForm from "./search-form";
-import TrainArt from "./train-art";
+import {
+  customerDraft,
+  destinationDraft,
+  editedSearchDraft,
+} from "@/lib/home-selection";
 import {
   allocationIsTogether,
   availableSeats,
@@ -45,12 +45,12 @@ import {
   recommend,
   restore,
   returnValid,
-  Scenario,
   Search,
   seatKey,
   Seat,
   seatsComplete,
   station,
+  stations,
   trains,
   Train,
   unavailable,
@@ -114,6 +114,16 @@ export default function BookingApp({ step }: { step: string }) {
       sessionStorage.removeItem("designify-recovery");
       const raw = sessionStorage.getItem(key);
       if (raw) next = restore(raw);
+      next = customerDraft(next);
+      if (step === "search") {
+        const destination = new URLSearchParams(window.location.search).get(
+          "destination",
+        );
+        if (destination && stations.some((s) => s.id === destination)) {
+          next = destinationDraft(next, destination);
+          message = `${station(destination)} selected as your destination. Choose your departure and check your travel dates.`;
+        }
+      }
     } catch {
       message =
         "Your saved draft could not be restored. Please start a new booking.";
@@ -146,7 +156,7 @@ export default function BookingApp({ step }: { step: string }) {
     }
   }, [b]);
   useEffect(() => {
-    if (!b || step === "demo" || guardedStep.current === step) return;
+    if (!b || guardedStep.current === step) return;
     guardedStep.current = step;
     if (b.status === "paid" && index > 0 && index < 7) {
       router.replace(href(7));
@@ -170,7 +180,7 @@ export default function BookingApp({ step }: { step: string }) {
       router.replace(href(earliest));
       return;
     }
-    document.title = `${labels[index]} | Designify`;
+    document.title = `${labels[index]} | Pakistan Railways`;
   }, [b, index, router, step]);
   useEffect(() => {
     if (candidate) {
@@ -181,6 +191,22 @@ export default function BookingApp({ step }: { step: string }) {
     }
   }, [candidate]);
   const ready = !!b;
+  const focusedBookingHash = useRef(false);
+  useEffect(() => {
+    if (
+      step === "search" &&
+      ready &&
+      !focusedBookingHash.current &&
+      window.location.hash === "#booking"
+    ) {
+      focusedBookingHash.current = true;
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLButtonElement>('#booking [data-field="from"]')
+          ?.focus({ preventScroll: true }),
+      );
+    }
+  }, [ready, step]);
   useEffect(() => {
     if (ready) heading.current?.focus();
   }, [ready, step]);
@@ -199,7 +225,7 @@ export default function BookingApp({ step }: { step: string }) {
   };
   const updateSearch = (search: Search) => {
     if (!b) return;
-    save({ ...b, search });
+    save(editedSearchDraft(b, search));
     setSelected(null);
   };
   const search = async () => {
@@ -342,7 +368,7 @@ export default function BookingApp({ step }: { step: string }) {
     if (b.scenario === "payment-failure") {
       save({ ...b, scenario: "normal" });
       setError(
-        "The demo payment could not be completed. No money was charged. Your booking details are saved; retry when ready.",
+        "The test payment could not be completed. No money was charged. Your booking details are saved; retry when ready.",
       );
       setBusy(false);
       paymentRef.current = false;
@@ -361,13 +387,59 @@ export default function BookingApp({ step }: { step: string }) {
   const reset = () => {
     if (
       window.confirm(
-        "Start a new booking? This will clear the current demo booking.",
+        "Start a new booking? This will clear the current booking.",
       )
     ) {
       save(freshBooking());
       router.push("/");
     }
   };
+  useEffect(() => {
+    if (step !== "search") return;
+    const selectDestination = (event: Event) => {
+      const id = (event as CustomEvent<string>).detail;
+      if (!stations.some((station) => station.id === id)) return;
+      setB((current) => (current ? destinationDraft(current, id) : current));
+      setNotice(
+        `${station(id)} selected as your destination. Your dates and passenger counts are unchanged.`,
+      );
+      if (b?.search.from === id)
+        setError(
+          "Your departure matches this destination. Choose a different departure station.",
+        );
+      else setError("");
+    };
+    window.addEventListener("railway:destination", selectDestination);
+    return () =>
+      window.removeEventListener("railway:destination", selectDestination);
+  }, [step, b?.search.from]);
+  if (index === 0)
+    return (
+      <div className="home-booking-widget">
+        {notice && (
+          <p className="destination-notice" role="status">
+            {notice}
+          </p>
+        )}
+        {error && (
+          <p className="error-text" role="alert">
+            {error}
+          </p>
+        )}
+        {b ? (
+          <SearchForm
+            value={b.search}
+            onChange={updateSearch}
+            onSearch={search}
+            busy={busy}
+          />
+        ) : (
+          <div className="booking-loading" role="status">
+            Getting your journey ready…
+          </div>
+        )}
+      </div>
+    );
   if (!b)
     return (
       <div className="loading-shell">
@@ -401,41 +473,6 @@ export default function BookingApp({ step }: { step: string }) {
   if (b.scenario === "empty") options = [];
   return (
     <>
-      <a className="skip-link" href="#main-content">
-        Skip to main content
-      </a>
-      <header className="site-header">
-        <div className="header-inner">
-          <Link href="/" className="brand" aria-label="Designify home">
-            <span className="brand-symbol">
-              <TrainFront size={23} />
-            </span>
-            <span>
-              designify<span className="brand-dot">.</span>
-              <small>A BETTER WAY TO JOURNEY</small>
-            </span>
-          </Link>
-          <nav aria-label="Main navigation">
-            <Link className={index === 0 ? "nav-active" : ""} href="/">
-              Book a journey
-            </Link>
-            <Link href="/part-a/index.html">Wireframe</Link>
-            <Link href="/demo">
-              Demo guide <ChevronRight size={14} />
-            </Link>
-          </nav>
-          <span className="country">
-            PK <span /> Pakistan
-          </span>
-        </div>
-      </header>
-      <div className="demo-strip">
-        <Info size={14} />
-        <span>
-          A little preview of a better journey. Demo bookings only — no real
-          tickets or charges.
-        </span>
-      </div>
       {index > 0 && (
         <div className="progress-wrap">
           <ol className="progress" aria-label="Booking progress">
@@ -483,108 +520,6 @@ export default function BookingApp({ step }: { step: string }) {
             <span>{error}</span>
           </div>
         )}
-        {index === 0 && (
-          <>
-            <section className="hero">
-              <div className="hero-copy">
-                <span className="eyebrow">
-                  <span className="green-line" /> THE JOURNEY IS PART OF THE
-                  STORY
-                </span>
-                <h1 ref={heading} tabIndex={-1}>
-                  Good journeys.
-                  <br />
-                  <span>Great company.</span>
-                </h1>
-                <p>
-                  Across cities. Closer to your people.
-                  <br />
-                  Find your train, pick your seats, and travel together.
-                </p>
-                <div className="hero-note">
-                  <span>
-                    <Check size={14} /> Your seats, your choice
-                  </span>
-                  <span>
-                    <Check size={14} /> Simple from start to finish
-                  </span>
-                </div>
-              </div>
-              <div className="hero-art">
-                <span className="art-caption">
-                  A NEW PERSPECTIVE ON RAIL TRAVEL
-                </span>
-                <TrainArt />
-                <span className="art-tag">
-                  <MapPin size={14} /> A little closer to wherever you belong.
-                </span>
-                <span className="art-index">01 / EXPLORE PAKISTAN</span>
-              </div>
-            </section>
-            <SearchForm
-              value={b.search}
-              onChange={updateSearch}
-              onSearch={search}
-              busy={busy}
-            />
-            <div className="trust-row">
-              <span>
-                <ShieldCheck size={16} /> Clear fares, no surprises
-              </span>
-              <span>
-                <Armchair size={16} /> Choose seats together
-              </span>
-              <span>
-                <Ticket size={16} /> All your journey details in one place
-              </span>
-            </div>
-            <section className="how-section">
-              <div className="section-intro">
-                <div>
-                  <span className="eyebrow">LESS PLANNING. MORE GOING.</span>
-                  <h2>A smoother journey, from the first click.</h2>
-                </div>
-                <p>Thoughtfully designed around the way you travel.</p>
-              </div>
-              <div className="how-grid">
-                {[
-                  {
-                    icon: TrainFront,
-                    title: "Find your way",
-                    text: "Compare departures and fares in one clear view. Find the train that fits your day.",
-                  },
-                  {
-                    icon: Users,
-                    title: "Bring your people",
-                    text: "One booking for the whole group. Keep everyone’s details together from the start.",
-                  },
-                  {
-                    icon: Armchair,
-                    title: "Make yourself comfortable",
-                    text: "See your seats before you go. Keep our suggestions or choose your own.",
-                  },
-                ].map((v, i) => (
-                  <article key={v.title}>
-                    <span className="how-icon">
-                      <v.icon size={22} />
-                    </span>
-                    <span className="how-number">0{i + 1}</span>
-                    <h3>{v.title}</h3>
-                    <p>{v.text}</p>
-                  </article>
-                ))}
-              </div>
-            </section>
-            <div className="home-bottom">
-              <Leaf size={19} />
-              <p>
-                A different pace. A different perspective.{" "}
-                <b>Rediscover the joy of the journey.</b>
-              </p>
-              <span>DESIGNED FOR PEOPLE, TOGETHER.</span>
-            </div>
-          </>
-        )}
         {index > 0 && index < 7 && (
           <div className="page-heading">
             <div>
@@ -606,12 +541,12 @@ export default function BookingApp({ step }: { step: string }) {
                 {
                   [
                     "",
-                    "Choose a departure that works for you. All schedules and fares are fictional.",
-                    "Compare your options. These classes and benefits are illustrative.",
-                    "Use fictional details in this prototype. Your group stays together in one booking.",
+                    "Choose a departure that works for you. Sample schedules and fares are shown.",
+                    "Compare the available options for your journey.",
+                    "Keep your group’s details together in one booking.",
                     "We’ve selected suggested seats for your group. You can change them.",
                     "Take a moment to check your journey and traveller details.",
-                    "Demo payment — no money will be charged.",
+                    "Test payment — no charge will be made.",
                   ][index]
                 }
               </p>
@@ -753,7 +688,7 @@ export default function BookingApp({ step }: { step: string }) {
                           <span>
                             <TrainFront size={17} /> <b>{t.name}</b>
                             <small>
-                              DEMO SERVICE · {t.id.slice(-1).padStart(2, "0")}
+                              SAMPLE SERVICE · {t.id.slice(-1).padStart(2, "0")}
                             </small>
                           </span>
                           <span className="service-tag">Direct journey</span>
@@ -825,7 +760,7 @@ export default function BookingApp({ step }: { step: string }) {
                                     .slice(0, 10)
                                 : t.date,
                             )}
-                            . Class amenities, capacity and timetable are demo
+                            . Class amenities, capacity and timetable are sample
                             fixtures.
                           </p>
                         )}
@@ -909,8 +844,8 @@ export default function BookingApp({ step }: { step: string }) {
                         </div>
                         {limited ? (
                           <p className="capacity-error">
-                            Only {c.capacity} demo seats available. Choose
-                            another class or train.
+                            Only {c.capacity} seats available in this sample
+                            service. Choose another class or train.
                           </p>
                         ) : null}
                         <button
@@ -1003,7 +938,7 @@ export default function BookingApp({ step }: { step: string }) {
                         aria-describedby={
                           fieldErrors[p.id] ? `${p.id}-error` : undefined
                         }
-                        placeholder="As you’d like it on the demo ticket"
+                        placeholder="Traveller’s full name"
                         autoComplete="off"
                         onChange={(e) =>
                           save(
@@ -1094,7 +1029,7 @@ export default function BookingApp({ step }: { step: string }) {
               <article className="panel">
                 <h2>Booking contact</h2>
                 <p className="subtle">
-                  For this demo summary only. No email will be sent.
+                  Add a contact for your booking summary. No email will be sent.
                 </p>
                 <div className="form-row">
                   {(["name", "email"] as const).map((k) => (
@@ -1163,7 +1098,7 @@ export default function BookingApp({ step }: { step: string }) {
               </article>
               <div className="action-row">
                 <span className="fineprint">
-                  <LockKeyhole size={14} /> Fictional information only
+                  <LockKeyhole size={14} /> For this booking summary
                 </span>
                 <button className="button primary" onClick={requirePassengers}>
                   Continue to seats <ArrowRight size={17} />
@@ -1363,7 +1298,7 @@ export default function BookingApp({ step }: { step: string }) {
                             })}
                           </div>
                           <div className="coach-bottom">
-                            SCHEMATIC DEMO LAYOUT
+                            SCHEMATIC SEAT LAYOUT
                           </div>
                         </div>
                       </div>
@@ -1581,19 +1516,19 @@ export default function BookingApp({ step }: { step: string }) {
                   {b.contact.name} · {b.contact.email}
                 </p>
                 <small className="subtle">
-                  No confirmation email is sent in this demo.
+                  No confirmation email will be sent.
                 </small>
               </article>
               {index === 5 ? (
                 <article className="panel">
-                  <h3>Have a demo voucher?</h3>
+                  <h3>Have a voucher?</h3>
                   <p className="subtle">
-                    Try DEMO10 for 10% off the base fare.
+                    Enter your voucher code to check for a discount.
                   </p>
                   <div className="voucher-row">
                     <input
                       className="input"
-                      aria-label="Demo voucher code"
+                      aria-label="Voucher code"
                       value={voucher}
                       onChange={(e) => setVoucher(e.target.value)}
                       placeholder="Enter code"
@@ -1604,10 +1539,10 @@ export default function BookingApp({ step }: { step: string }) {
                         if (voucher.trim().toUpperCase() === "DEMO10") {
                           save({ ...b, voucher: "DEMO10" });
                           setError("");
-                          setNotice("DEMO10 applied: 10% off your base fare.");
+                          setNotice("Voucher applied: 10% off your base fare.");
                         } else
                           setError(
-                            "That voucher is not available. Try DEMO10 or continue at full price.",
+                            "That voucher is not available. Check the code or continue at full price.",
                           );
                       }}
                     >
@@ -1632,7 +1567,7 @@ export default function BookingApp({ step }: { step: string }) {
                   <span className="payment-icon">
                     <LockKeyhole size={25} />
                   </span>
-                  <h2>Demo payment</h2>
+                  <h2>Test payment</h2>
                   <p>
                     No money will be charged. No card or bank details are
                     needed.
@@ -1644,8 +1579,7 @@ export default function BookingApp({ step }: { step: string }) {
                     <ShieldCheck size={21} />
                   </div>
                   <small>
-                    Fictional booking confirmation for your prototype
-                    walkthrough.
+                    Test payment confirmation for your booking summary.
                   </small>
                 </article>
               )}
@@ -1673,15 +1607,15 @@ export default function BookingApp({ step }: { step: string }) {
                       Proceed to payment <ArrowRight size={17} />
                     </>
                   ) : busy ? (
-                    "Processing demo payment…"
+                    "Processing test payment…"
                   ) : (
-                    `${error ? "Retry payment" : "Pay"} ${money(totals.total)} — demo`
+                    `${error ? "Retry payment" : "Pay"} ${money(totals.total)} — test`
                   )}
                 </button>
               </div>
               <p className="fineprint" role="status">
                 {busy
-                  ? "Please keep this page open while the demo payment is processed."
+                  ? "Please keep this page open while the test payment is processed."
                   : ""}
               </p>
             </section>
@@ -1704,9 +1638,9 @@ export default function BookingApp({ step }: { step: string }) {
               <span className="confirmation-check">
                 <Check size={32} />
               </span>
-              <span className="eyebrow">ALL SET FOR YOUR DEMO JOURNEY</span>
+              <span className="eyebrow">YOUR JOURNEY DETAILS</span>
               <h1 ref={heading} tabIndex={-1}>
-                Demo booking confirmed.
+                Your booking summary.
               </h1>
               <p>
                 Good journeys begin with good company. Here are all your
@@ -1722,9 +1656,9 @@ export default function BookingApp({ step }: { step: string }) {
                   <article className="confirmation-ticket" key={l.id}>
                     <div className="ticket-header">
                       <span>
-                        <TrainFront size={19} /> designify.
+                        <TrainFront size={19} /> Pakistan Railways
                       </span>
-                      <span>{l.id.toUpperCase()} · DEMO TICKET</span>
+                      <span>{l.id.toUpperCase()} · JOURNEY SUMMARY</span>
                     </div>
                     <div className="ticket-body">
                       <span className="eyebrow">
@@ -1761,7 +1695,7 @@ export default function BookingApp({ step }: { step: string }) {
                       })}
                     </div>
                     <div className="ticket-footer">
-                      <span>SIMULATED PAYMENT SUCCESSFUL</span>
+                      <span>TEST PAYMENT COMPLETED</span>
                       <b>Not valid for travel</b>
                     </div>
                   </article>
@@ -1773,7 +1707,7 @@ export default function BookingApp({ step }: { step: string }) {
                   </p>
                   <small>
                     No email has been sent. Print or save this summary for your
-                    demonstration.
+                    records.
                   </small>
                 </div>
                 <div className="action-row no-print">
@@ -1794,123 +1728,7 @@ export default function BookingApp({ step }: { step: string }) {
             </div>
           </>
         )}
-        {step === "demo" && (
-          <>
-            <div className="page-heading">
-              <div>
-                <span className="eyebrow">PROTOTYPE TESTING</span>
-                <h1 ref={heading} tabIndex={-1}>
-                  Demo guide & scenarios
-                </h1>
-                <p>
-                  Fictional fixtures. Select a controlled scenario, then return
-                  to your booking.
-                </p>
-              </div>
-            </div>
-            <section className="panel">
-              <p>
-                <b>Current scenario:</b> {b.scenario}
-              </p>
-              <div className="scenario-grid">
-                {[
-                  {
-                    id: "normal",
-                    name: "Normal",
-                    text: "Restore ordinary search, seat selection and successful payment.",
-                  },
-                  {
-                    id: "empty",
-                    name: "No results",
-                    text: "Results show an empty state. Clear filters and retry restores Normal.",
-                  },
-                  {
-                    id: "search-error",
-                    name: "Search error",
-                    text: "Results fail to load. Retry search restores Normal.",
-                  },
-                  {
-                    id: "seat-conflict",
-                    name: "Seat conflict",
-                    text: "First review attempt releases Traveller 1’s outbound seat; assign a replacement.",
-                  },
-                  {
-                    id: "payment-failure",
-                    name: "Payment failure",
-                    text: "Next payment fails once. Retry succeeds and preserves your booking.",
-                  },
-                ].map((s) => (
-                  <button
-                    key={s.id}
-                    className={`scenario ${b.scenario === s.id ? "selected" : ""}`}
-                    onClick={() => {
-                      save({
-                        ...b,
-                        scenario: s.id as Scenario,
-                        conflictHandled: false,
-                        conflict: undefined,
-                      });
-                      setNotice(
-                        `${s.name} selected. Return to your booking to test it.`,
-                      );
-                    }}
-                  >
-                    <b>{s.name}</b>
-                    <span>{s.text}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="action-row">
-                <button className="button secondary" onClick={reset}>
-                  Reset all booking data
-                </button>
-                <Link
-                  className="button primary"
-                  href={href(b.status === "paid" ? 7 : earliestStep(b))}
-                >
-                  Return to booking <ArrowRight size={17} />
-                </Link>
-              </div>
-            </section>
-            <section className="panel">
-              <h2>Explore both versions</h2>
-              <p>
-                <a href="/part-a/index.html">
-                  Open the preserved grayscale Part A prototype
-                </a>
-                . Documentation and blank human-evidence records are in{" "}
-                <code>docs/d4</code>.
-              </p>
-              <p>
-                Use a future date for all four demo departures. Long Karachi
-                routes include overnight arrivals. Every passenger pays the
-                selected fixture fare; DEMO10 reduces the combined base fare by
-                10%, rounded once.
-              </p>
-              <p>
-                Route map and train animation are deferred. Current classes,
-                amenities, capacity, seat layout and allocation are
-                illustrative. No real timetable, account, inventory or payment
-                service is connected.
-              </p>
-            </section>
-          </>
-        )}
       </main>
-      <footer className="site-footer">
-        <div>
-          <Link href="/" className="footer-brand">
-            <TrainFront size={19} /> designify.
-          </Link>
-          <span>Thoughtfully designed for the journey ahead.</span>
-        </div>
-        <div>
-          <span>HCI PROTOTYPE · D4</span>
-          <Link href="/demo">
-            About this demo <ArrowRight size={13} />
-          </Link>
-        </div>
-      </footer>
     </>
   );
 }
@@ -1921,7 +1739,7 @@ function RoutePreview({ from, to }: { from: string; to: string }) {
   return (
     <div className="panel route-preview">
       <span className="eyebrow">YOUR JOURNEY AT A GLANCE</span>
-      <h2>Route preview</h2>
+      <h2>Route summary</h2>
       <div className="route-placeholder">
         <div className="route-stations">
           <span>
@@ -1935,7 +1753,7 @@ function RoutePreview({ from, to }: { from: string; to: string }) {
         </div>
         <MapPin size={58} strokeWidth={1} />
       </div>
-      <p>Map preview will be added in the final version</p>
+      <p>Your origin and destination, together in one view.</p>
     </div>
   );
 }
@@ -2009,7 +1827,7 @@ function Summary({ b }: { b: Booking }) {
         </span>
         {p.discount > 0 && (
           <span className="discount">
-            DEMO10 · 10% off <b>− {money(p.discount)}</b>
+            Voucher · 10% off <b>− {money(p.discount)}</b>
           </span>
         )}
       </div>

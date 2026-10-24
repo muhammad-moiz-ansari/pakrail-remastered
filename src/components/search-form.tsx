@@ -4,6 +4,7 @@ import {
   ArrowRight,
   ArrowRightLeft,
   CalendarDays,
+  TrainFront,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -191,7 +192,7 @@ export default function SearchForm({
       {!compact && (
         <div className="search-title">
           <span>
-            <span className="tiny-train">▰</span> Book a train
+            <TrainFront size={21} /> Book train tickets
           </span>
           <span className="subtle">Your next journey starts here</span>
         </div>
@@ -574,7 +575,7 @@ export default function SearchForm({
               </button>
             </div>
           ))}
-          <small className="subtle">Up to 6 travellers in this demo.</small>
+          <small className="subtle">Up to 6 travellers per booking.</small>
           <button
             type="button"
             className="button primary full"

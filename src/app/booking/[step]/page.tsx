@@ -12,10 +12,10 @@ export async function generateMetadata({
     passengers: "Traveller details",
     seats: "Choose seats",
     review: "Review booking",
-    payment: "Demo payment",
+    payment: "Test payment",
     confirmation: "Booking confirmation",
   };
-  return { title: `${titles[step] ?? "Booking"} | Designify` };
+  return { title: `${titles[step] ?? "Booking"} | Pakistan Railways` };
 }
 export function generateStaticParams() {
   return [

@@ -1,0 +1,137 @@
+{
+  "updated": "2026-10-25",
+  "assets": [
+    {
+      "file": "public/images/home/train-hero.jpg",
+      "title": "Khyber railway, December 1993",
+      "author": "MaltaGC",
+      "source": "https://commons.wikimedia.org/wiki/File:KhyberRailway_01.jpg",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "use": "Heritage hero and experience tile",
+      "temporary": true,
+      "modifications": "Responsive CSS cropping only; downloaded file unchanged",
+      "focalPoints": "src/lib/home-content.ts"
+    },
+    {
+      "file": "public/images/home/destination-lahore.jpg",
+      "title": "Badshahi Mosque",
+      "author": "Romero Maia",
+      "source": "https://commons.wikimedia.org/wiki/File:Badshahi_Mosque_front_picture.jpg",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "use": "Lahore",
+      "temporary": true,
+      "modifications": "Responsive CSS cropping only; downloaded file unchanged",
+      "focalPoints": "src/lib/home-content.ts"
+    },
+    {
+      "file": "public/images/home/destination-karachi.jpg",
+      "title": "Mazar-e-Quaid",
+      "author": "Steve Evans",
+      "source": "https://commons.wikimedia.org/wiki/File:MazareQuad.jpeg",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "use": "Karachi",
+      "temporary": true,
+      "modifications": "Responsive CSS cropping only; downloaded file unchanged",
+      "focalPoints": "src/lib/home-content.ts"
+    },
+    {
+      "file": "public/images/home/destination-rawalpindi.jpg",
+      "title": "Rawalpindi Railway Station",
+      "author": "Rana Usman Shakoor",
+      "source": "https://commons.wikimedia.org/wiki/File:Rawalpindi_Railway_Station_-_01.jpg",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "use": "Rawalpindi",
+      "temporary": true,
+      "modifications": "Responsive CSS cropping only; downloaded file unchanged",
+      "focalPoints": "src/lib/home-content.ts"
+    },
+    {
+      "file": "public/images/home/destination-multan.jpg",
+      "title": "Tomb of Shah Rukn-e-Alam",
+      "author": "Junaidahmadj / D Junad Photography",
+      "source": "https://commons.wikimedia.org/wiki/File:Tomb_of_Shah_Rukn-e-Alam_2_Multan.jpg",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "use": "Multan",
+      "temporary": true,
+      "modifications": "Responsive CSS cropping only; downloaded file unchanged",
+      "focalPoints": "src/lib/home-content.ts"
+    },
+    {
+      "file": "public/images/home/destination-faisalabad.jpg",
+      "title": "Faisalabad Clock Tower",
+      "author": "Muhammad Tahir",
+      "source": "https://commons.wikimedia.org/wiki/File:Clock_Tower,_Faisalabad.jpeg",
+      "license": "CC SA 1.0",
+      "licenseUrl": "https://creativecommons.org/licenses/sa/1.0/",
+      "use": "Faisalabad",
+      "temporary": true,
+      "modifications": "Responsive CSS cropping only; downloaded file unchanged",
+      "focalPoints": "src/lib/home-content.ts"
+    },
+    {
+      "file": "public/images/home/destination-islamabad.avif",
+      "title": "Mosque in Islamabad",
+      "author": "Abdul Basit Nasim",
+      "source": "https://www.pexels.com/photo/busy-day-at-masjid-in-islamabad-pakistan-36918154/",
+      "license": "Pexels license",
+      "licenseUrl": "https://www.pexels.com/license/",
+      "use": "Islamabad",
+      "temporary": true,
+      "modifications": "Responsive CSS cropping only; downloaded file unchanged",
+      "focalPoints": "src/lib/home-content.ts"
+    },
+    {
+      "file": "public/images/home/class-economy.avif",
+      "title": "Train interior",
+      "author": "Ali Ramazan Çiftçi",
+      "source": "https://www.pexels.com/photo/interior-of-train-13742961/",
+      "license": "Pexels license",
+      "licenseUrl": "https://www.pexels.com/license/",
+      "use": "Illustrative foreign train interior",
+      "temporary": true,
+      "modifications": "Responsive CSS cropping only; downloaded file unchanged",
+      "focalPoints": "src/lib/home-content.ts"
+    },
+    {
+      "file": "public/images/home/class-standard.avif",
+      "title": "Seats beside a train window",
+      "author": "Noland Live",
+      "source": "https://www.pexels.com/photo/empty-seats-by-the-window-in-a-train-23964495/",
+      "license": "Pexels license",
+      "licenseUrl": "https://www.pexels.com/license/",
+      "use": "Illustrative foreign train interior",
+      "temporary": true,
+      "modifications": "Responsive CSS cropping only; downloaded file unchanged",
+      "focalPoints": "src/lib/home-content.ts"
+    },
+    {
+      "file": "public/images/home/class-business.avif",
+      "title": "Vintage rail interior",
+      "author": "Colin Lloyd",
+      "source": "https://www.pexels.com/photo/red-and-brown-train-seats-4050386/",
+      "license": "Pexels license",
+      "licenseUrl": "https://www.pexels.com/license/",
+      "use": "Illustrative foreign train interior",
+      "temporary": true,
+      "modifications": "Responsive CSS cropping only; downloaded file unchanged",
+      "focalPoints": "src/lib/home-content.ts"
+    },
+    {
+      "file": "public/images/home/our-people.avif",
+      "title": "Railway technician, Surabaya, Indonesia",
+      "author": "Putra Kusuma",
+      "source": "https://www.pexels.com/photo/a-male-technician-walking-in-the-train-station-13300273/",
+      "license": "Pexels license",
+      "licenseUrl": "https://www.pexels.com/license/",
+      "use": "Illustrative foreign workplace; not Pakistan Railways staff",
+      "temporary": true,
+      "modifications": "Responsive CSS cropping only; downloaded file unchanged",
+      "focalPoints": "src/lib/home-content.ts"
+    }
+  ]
+}

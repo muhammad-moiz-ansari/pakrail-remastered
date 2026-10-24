@@ -1,4 +1,4 @@
-import BookingApp from "@/components/booking-app";
+import Homepage from "@/components/homepage";
 export default function Home() {
-  return <BookingApp step="search" />;
+  return <Homepage />;
 }

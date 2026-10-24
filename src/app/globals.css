@@ -191,18 +191,7 @@ svg {
   height: 16px;
   background: var(--border);
 }
-.demo-strip {
-  padding: 8px 20px;
-  min-height: 34px;
-  background: #edf3ee;
-  color: #456254;
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  letter-spacing: 0.1px;
-}
+
 .main {
   max-width: 1248px;
   padding: 36px 32px 70px;
@@ -2176,33 +2165,7 @@ select {
 .empty-state .text-button {
   margin: 15px;
 }
-.scenario-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-  margin: 20px 0;
-}
-.scenario {
-  background: white;
-  border: 1px solid var(--control);
-  border-radius: 8px;
-  padding: 20px;
-  text-align: left;
-}
-.scenario.selected {
-  border: 2px solid var(--green);
-  background: var(--soft);
-}
-.scenario b {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 15px;
-}
-.scenario span {
-  font-size: 12px;
-  line-height: 1.8;
-  color: var(--muted);
-}
+
 .loading-shell {
   min-height: 100vh;
   display: flex;
@@ -2500,9 +2463,7 @@ select {
   .seat-layout > aside .booking-summary {
     max-width: none;
   }
-  .scenario-grid {
-    grid-template-columns: 1fr 1fr;
-  }
+
   .confirmation-heading h1 {
     font-size: 30px;
   }
@@ -2539,12 +2500,7 @@ select {
   .header-inner nav > a:nth-child(2) {
     display: none;
   }
-  .demo-strip {
-    padding: 9px 15px;
-    font-size: 9px;
-    text-align: left;
-    line-height: 1.6;
-  }
+
   .main {
     padding: 26px 16px 40px;
   }
@@ -3142,9 +3098,7 @@ select {
   .confirmation-traveller small {
     font-size: 10px;
   }
-  .scenario-grid {
-    grid-template-columns: 1fr;
-  }
+
   .alert {
     font-size: 11px;
     padding: 12px;
@@ -3186,15 +3140,6 @@ select {
     font-size: 12px;
   }
   .site-header,
-  .demo-strip,
-  .progress-wrap,
-  .site-footer,
-  .no-print,
-  .alert,
-  .skip-link,
-  .summary-foot {
-    display: none !important;
-  }
   .main {
     padding: 0;
     max-width: none;
@@ -3300,9 +3245,7 @@ body {
 .header-inner nav {
   font-size: 13px;
 }
-.demo-strip {
-  font-size: 12px;
-}
+
 .site-footer > div {
   font-size: 12px;
 }
@@ -3448,9 +3391,7 @@ body {
 .side-note p {
   font-size: 13px;
 }
-.scenario span {
-  font-size: 14px;
-}
+
 .alert {
   font-size: 14px;
 }
@@ -3523,9 +3464,7 @@ body {
     font-size: 10px;
     gap: 10px;
   }
-  .demo-strip {
-    font-size: 11px;
-  }
+
   .trust-row {
     font-size: 11px;
   }

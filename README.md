@@ -1,66 +1,48 @@
-# Designify — Pakistan rail booking prototype
+# Pakistan Railways
 
-A responsive CS3014 D4 prototype built in this repository with Next.js App Router, React and TypeScript. Original emerald identity, guided train search, ticket-style results, class comparison, editable travellers, seats for each leg, review/vouchers, demo payment and printable confirmation.
+A responsive train-booking interface built with Next.js App Router, React and TypeScript. The redesigned homepage uses the supplied Pakistan Railways identity, locally served Bodoni Moda and Manrope, licensed photography, destination shortcuts and an overlapping guided booking form.
 
 ## Run locally
 
-Requires Node.js 22.13+ (tested with Node 24.19) and npm. No environment variables or service credentials required.
+Requires Node.js 22.13+ and npm. No environment variables or service credentials are required.
 
 ```powershell
 npm ci
 npm run dev
 ```
 
-Open [Designify](http://localhost:3000). Use one hostname consistently; localhost and 127.0.0.1 have separate browser draft storage.
+Open [Pakistan Railways](http://localhost:3000). Keep one hostname: localhost and 127.0.0.1 have separate browser draft storage. Another port: `npm run dev -- --port 3001`.
 
 ```powershell
 npm run typecheck
 npm run lint
 npm test
+npm run format:check
 npm run build
 npm start
 ```
 
-Run `npm start` after building, with the dev server stopped if it occupies port 3000. Another port: `npm run dev -- --port 3001` or `npm start -- --port 3001`. System fonts and bundled SVG/icons need no remote assets after installation.
+Build before running `npm start`; stop the development server first if it uses the same port. Fonts and photographs are bundled locally, so rendering does not depend on an external font or image service.
 
-## Two versions
+## Booking flow
 
-- **Part A:** [preserved grayscale structural flow](http://localhost:3000/part-a/index.html), independent source in `public/part-a/index.html`, authored before the green application. Can also be opened directly. Includes S1–S8 and error/recovery navigation. See `docs/d4/part-a-manifest.md`.
-- **Part B:** [functional green prototype](http://localhost:3000), all eight booking screens.
-- **Testing:** [demo scenarios](http://localhost:3000/demo), outside the traveller flow.
+1. Choose different departure and arrival stations, a departure date, and either One Way or a return date.
+2. Confirm up to six travellers and search. Compare times and fares, then select a train for each leg.
+3. Choose Economy, AC Standard or Business for each leg. Add fictional traveller names and a contact such as `sample@example.com`.
+4. Suggested seats arrive selected. Select a traveller, a Free seat and Confirm seat to change one. Cancel preserves the previous seat. Coach switches and the text selection view preserve assignments. Return journeys need seats on both legs.
+5. Review and edit the journey, group, seats and total. The existing fixture voucher `DEMO10` still applies a 10% discount, rounded once; the public interface no longer advertises tester codes.
+6. Complete the clearly labelled test payment to view a printable booking summary. No money is charged, no credentials are collected, no email is sent and the summary is not valid for travel.
 
-IA: **Proposed — awaiting card-sort validation**. See the [D4 checklist](docs/d4/00-submission-checklist.md). Real card sorting, team keyboard/screen-reader audit and recheck, studio critique, personal reflections, narrated/captioned MP4 and live instructor checkpoint remain the team’s work. No findings or participants are invented.
+The six supported stations, sample services, class fixtures, pricing, allocation and return-leg validation are retained. There is no live timetable, railway inventory, account service, payment integration or ticket issuance. Class amenities, capacity and photographs are illustrative. Destination shortcuts change only the arrival station and retain the origin, dates and passenger counts; choosing the origin as a destination shows validation feedback.
 
-## Try a booking
+Drafts remain in this tab's versioned `sessionStorage`. Existing storage keys and passenger data are preserved. Retired tester scenarios are normalized to ordinary booking state when restored. `/demo` and `/part-a/index.html` redirect to the homepage. The separately preserved academic wireframe remains at `academic/part-a/index.html` and can be opened offline; it is not linked or served as a customer mode.
 
-1. Choose Lahore Junction → Rawalpindi and a future date, then explicit One Way or a return date.
-2. Set three adults → Done → Search trains. Four fictional services run on future dates; today excludes departed services in Asia/Karachi.
-3. Select a train → Book this train. Returns require a second train after the outbound arrival, including overnight journeys.
-4. Explicitly select class for each leg. Economy, AC Standard and Business are illustrative; Business has four available demo seats.
-5. Enter fictional names and a contact email such as `demo@example.com`.
-6. Suggested seats arrive selected. Choose traveller → free seat → Confirm seat to change; Cancel retains the previous choice. Coach switches preserve assignments. Text selection offers an alternative to the spatial map. Returns need seats for both legs.
-7. Review details. Optional `DEMO10` takes 10% off combined base fare, rounded once. Every adult/child pays the selected class fare; no extra seat fee.
-8. Proceed to payment → Pay [total] — demo → confirmation. Print summary uses the browser. Refresh keeps the reference. Start new booking asks before reset.
+## Maintain the homepage
 
-## Controlled scenarios
+- Replace the temporary hero at `public/images/home/train-hero.jpg`, or update its path and focal point in `src/lib/home-content.ts`. The same image is currently used in the rail-experience tile, whose path can be changed independently.
+- All destination and class photo paths, alternative text and focal points are centralized in `src/lib/home-content.ts`. Update the credits page and `references/home-asset-downloads.json` when replacing a photograph.
+- The supplied `public/logo.png` is used without alteration. `public/logo-full.png` is also preserved. Typography uses local files in `public/fonts/`, with their SIL Open Font Licenses included.
+- Homepage components live in `src/components/homepage.tsx`, `home-experience.tsx`, `site-header.tsx` and `site-footer.tsx`. Shared styling is in `src/app/marketing.css`; existing booking layouts remain in `src/app/globals.css`.
+- Informational links open implemented local pages. Careers links to the verified official recruitment page. Unverified contact details, social accounts and railway policy text have not been invented.
 
-Select at `/demo`, then open the relevant booking step. **Normal** restores ordinary simulation; Reset clears the draft after confirmation.
-
-| Scenario        | Trigger                       | Recovery                                                      |
-| --------------- | ----------------------------- | ------------------------------------------------------------- |
-| No results      | Open results                  | Clear filters and retry / edit journey                        |
-| Search error    | Open results                  | Retry search restores Normal                                  |
-| Seat conflict   | Click Review booking on Seats | Replace the affected passenger’s outbound seat; others remain |
-| Payment failure | Click Pay once                | Retry succeeds with details retained                          |
-
-For a seat conflict after a complete draft, open Seats through Edit/Back or `/booking/seats`, then Review. Generic Return to booking opens the earliest incomplete step, or Payment if all details are complete.
-
-## Architecture and scope
-
-`src/lib/booking.ts`: fixtures, validation, pricing, state transitions and allocation. `src/components/search-form.tsx`: guided search. `src/components/booking-app.tsx`: journey UI, guards, seats, payment and summary. `tests/booking.test.ts`: domain tests. `src/app/globals.css`: responsive and print styles.
-
-Versioned fictional drafts use `sessionStorage` after hydration. Stale/malformed drafts recover with a message. Names/contact do not enter URLs. Each tab has its own session; this is not cross-device persistence or a real seat hold.
-
-Six stations, four fictional services, two mock coaches per class, illustrative amenities/capacity and provisional deterministic seat suggestions. Delays/failures are coded simulation, not human-operated Wizard-of-Oz. No real account, timetable, map, inventory, payment or ticket issuance. Route map is labelled placeholder; train is static SVG. Rank 0–3, concessions, age rules, pink/blue meanings, production allocation and countdown/holds remain deferred. No real credentials, email claims or travel-valid QR.
-
-Actual checks and limits: [engineering validation](docs/d4/10-engineering-validation.md). Automated tests and Codex browser checks do not replace the team’s accessibility findings or establish WCAG conformance.
+See `docs/ui-refresh.md` for implementation choices, validation and image replacement notes. Image attribution is also accessible from the website footer.

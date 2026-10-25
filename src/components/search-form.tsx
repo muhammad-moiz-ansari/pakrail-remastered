@@ -7,8 +7,6 @@ import {
   TrainFront,
   Check,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   MapPin,
   Minus,
   Plus,
@@ -16,14 +14,14 @@ import {
   X,
 } from "lucide-react";
 import {
-  addDays,
   prettyDate,
   searchErrors,
   Search,
   station,
   stations,
-  today,
 } from "@/lib/booking";
+import TravelCalendar from "./travel-calendar";
+import { selectCalendarDate } from "@/lib/calendar-range";
 type Props = {
   value: Search;
   onChange: (s: Search) => void;
@@ -43,7 +41,7 @@ export default function SearchForm({
   const [guided, setGuided] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [month, setMonth] = useState(s.date.slice(0, 7));
-  const [preview, setPreview] = useState("");
+  const [calendarSession, setCalendarSession] = useState(0);
   const [active, setActive] = useState(0);
   const root = useRef<HTMLFormElement>(null);
   const origin = useRef<HTMLButtonElement | null>(null);
@@ -62,7 +60,7 @@ export default function SearchForm({
     if (open === "from" || open === "to") stationInput.current?.focus();
     else if (open === "depart" || open === "return")
       root.current
-        ?.querySelector<HTMLButtonElement>("[data-day]:not(:disabled)")
+        ?.querySelector<HTMLHeadingElement>("[data-calendar-heading]")
         ?.focus();
     else if (open === "passengers")
       root.current
@@ -73,19 +71,27 @@ export default function SearchForm({
   }, [open]);
   useEffect(() => {
     const down = (e: PointerEvent) => {
-      if (root.current && !root.current.contains(e.target as Node)) {
+      const target = e.target as Element;
+      const calendarOutside =
+        (open === "depart" || open === "return") &&
+        !target.closest(".date-fields, .calendar-pop");
+      if (root.current && (!root.current.contains(target) || calendarOutside)) {
         setOpen("");
         setGuided(false);
       }
     };
     document.addEventListener("pointerdown", down);
     return () => document.removeEventListener("pointerdown", down);
-  }, []);
+  }, [open]);
   const show = (name: string, el: HTMLButtonElement) => {
     origin.current = el;
     setQuery("");
     setActive(0);
-    setOpen(open === name ? "" : name);
+    if (name === "depart" || name === "return") {
+      setCalendarSession((v) => v + 1);
+      setOpen(name);
+      if (name === "return") patch({ trip: "return" });
+    } else setOpen(open === name ? "" : name);
     setGuided(name === "from" && !s.from);
   };
   const options = stations.filter((v) =>
@@ -103,65 +109,25 @@ export default function SearchForm({
       setMonth(s.date.slice(0, 7));
       queueMicrotask(() =>
         root.current
-          ?.querySelector<HTMLButtonElement>("[data-day]:not(:disabled)")
+          ?.querySelector<HTMLHeadingElement>("[data-calendar-heading]")
           ?.focus(),
       );
     } else close();
   };
   const chooseDate = (date: string) => {
+    const next = selectCalendarDate(
+      s,
+      open === "depart" ? "depart" : "return",
+      date,
+    );
+    if (!next) return;
+    patch(next);
     if (open === "depart") {
-      const invalidReturn = s.trip === "return" && s.returnDate < date;
-      const needsReturnChoice =
-        guided || s.trip === "undecided" || invalidReturn;
-      patch({
-        date,
-        returnDate: invalidReturn ? "" : s.returnDate,
-        trip: invalidReturn ? "undecided" : s.trip,
-      });
-      if (needsReturnChoice) setOpen("return");
+      if (s.trip !== "oneway") setOpen("return");
       else close();
-      setPreview("");
-    } else {
-      patch({ returnDate: date, trip: "return" });
-      if (guided) setOpen("passengers");
-      else close();
-      setGuided(false);
     }
+    setGuided(false);
   };
-  const dateKey = (e: React.KeyboardEvent<HTMLButtonElement>, date: string) => {
-    const offsets: Record<string, number> = {
-      ArrowLeft: -1,
-      ArrowRight: 1,
-      ArrowUp: -7,
-      ArrowDown: 7,
-      Home: -(new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7,
-      End: 6 - ((new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7),
-    };
-    if (e.key in offsets) {
-      e.preventDefault();
-      const next = addDays(date, offsets[e.key]);
-      if (next < today() || (open === "return" && next < s.date)) return;
-      const el = root.current?.querySelector<HTMLButtonElement>(
-        `[data-day="${next}"]`,
-      );
-      if (el && !el.disabled && el.getClientRects().length > 0) el.focus();
-      else {
-        setMonth(next.slice(0, 7));
-        setTimeout(
-          () =>
-            root.current
-              ?.querySelector<HTMLButtonElement>(`[data-day="${next}"]`)
-              ?.focus(),
-          0,
-        );
-      }
-    }
-  };
-  const months = [0, 1].map((offset) => {
-    const d = new Date(`${month}-01T12:00:00Z`);
-    d.setUTCMonth(d.getUTCMonth() + offset);
-    return d;
-  });
   return (
     <form
       ref={root}
@@ -386,142 +352,25 @@ export default function SearchForm({
         </div>
       )}
       {(open === "depart" || open === "return") && (
-        <div
-          className="popover calendar-pop"
-          aria-label={
-            open === "depart" ? "Choose departure date" : "Choose return date"
-          }
-        >
-          <div className="popover-heading">
-            <div>
-              <small className="eyebrow">PLAN YOUR JOURNEY</small>
-              <h3>
-                {open === "depart"
-                  ? "Choose your departure date"
-                  : "When would you like to return?"}
-              </h3>
-            </div>
-            <button
-              type="button"
-              className="text-button"
-              onClick={() => {
-                patch({ trip: "oneway", returnDate: "" });
-                if (guided) setOpen("passengers");
-                else close();
-                setGuided(false);
-              }}
-            >
-              <Check size={16} /> One Way
-            </button>
-            <button
-              type="button"
-              className="icon-button"
-              aria-label="Close calendar"
-              onClick={close}
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <div className="calendar-context">
-            {station(s.from)} <ArrowRight size={14} /> {station(s.to)}{" "}
-            <span>
-              {prettyDate(s.date)}
-              {s.returnDate ? ` – ${prettyDate(s.returnDate)}` : ""}
-            </span>
-          </div>
-          <div className="month-nav">
-            <button
-              type="button"
-              className="icon-button"
-              aria-label="Previous month"
-              disabled={month <= today().slice(0, 7)}
-              onClick={() => {
-                const d = new Date(`${month}-01T12:00:00Z`);
-                d.setUTCMonth(d.getUTCMonth() - 1);
-                setMonth(d.toISOString().slice(0, 7));
-              }}
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              type="button"
-              className="icon-button"
-              aria-label="Next month"
-              onClick={() => {
-                const d = new Date(`${month}-01T12:00:00Z`);
-                d.setUTCMonth(d.getUTCMonth() + 1);
-                setMonth(d.toISOString().slice(0, 7));
-              }}
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-          <div className="months">
-            {months.map((d, mi) => {
-              const y = d.getUTCFullYear(),
-                m = d.getUTCMonth();
-              const days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(),
-                offset = (d.getUTCDay() + 6) % 7;
-              return (
-                <section className={`month month-${mi}`} key={mi}>
-                  <h4>
-                    {d.toLocaleDateString("en-GB", {
-                      month: "long",
-                      year: "numeric",
-                      timeZone: "UTC",
-                    })}
-                  </h4>
-                  <div className="days">
-                    {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((v) => (
-                      <small key={v}>{v}</small>
-                    ))}
-                    {Array.from({ length: offset }, (_, i) => (
-                      <span key={`blank${i}`} />
-                    ))}
-                    {Array.from({ length: days }, (_, i) => {
-                      const date = `${y}-${String(m + 1).padStart(2, "0")}-${String(i + 1).padStart(2, "0")}`;
-                      const disabled =
-                        date < today() || (open === "return" && date < s.date);
-                      const end = preview || s.returnDate;
-                      return (
-                        <button
-                          type="button"
-                          data-day={date}
-                          key={date}
-                          disabled={disabled}
-                          aria-label={`${prettyDate(date)}${date === s.date ? ", departure selected" : ""}${date === s.returnDate ? ", return selected" : ""}`}
-                          aria-pressed={
-                            date === s.date || date === s.returnDate
-                          }
-                          className={`day ${date === s.date ? "range-start endpoint" : ""} ${date === s.returnDate ? "range-end endpoint" : ""} ${end && date > s.date && date < end ? "in-range" : ""}`}
-                          onMouseEnter={() => {
-                            if (open === "return" && !disabled)
-                              setPreview(date);
-                          }}
-                          onMouseLeave={() => setPreview("")}
-                          onFocus={() => {
-                            if (open === "return" && !disabled)
-                              setPreview(date);
-                          }}
-                          onBlur={() => setPreview("")}
-                          onKeyDown={(e) => dateKey(e, date)}
-                          onClick={() => chooseDate(date)}
-                        >
-                          {i + 1}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-              );
-            })}
-          </div>
-          <div className="calendar-foot">
-            {open === "depart"
-              ? "Select a date to continue to return selection."
-              : "Select a return date, or choose One Way above."}
-          </div>
-        </div>
+        <TravelCalendar
+          key={calendarSession}
+          value={s}
+          field={open}
+          month={month}
+          onMonth={setMonth}
+          onSelect={chooseDate}
+          onRange={(range) => {
+            patch({ ...range, trip: "return" });
+            setOpen("return");
+            setGuided(false);
+          }}
+          onEditReturn={() => setOpen("return")}
+          onClose={close}
+          onOneWay={() => {
+            patch({ trip: "oneway", returnDate: "" });
+            close();
+          }}
+        />
       )}
       {open === "passengers" && (
         <div className="popover passengers-pop">

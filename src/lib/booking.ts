@@ -75,7 +75,18 @@ export type Search = {
   adults: number;
   children: number;
 };
-export type Passenger = { id: string; name: string; type: "adult" | "child" };
+export const genderOptions = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "prefer_not_to_say", label: "Prefer not to say" },
+] as const;
+export type Gender = (typeof genderOptions)[number]["value"];
+export type Passenger = {
+  id: string;
+  name: string;
+  type: "adult" | "child";
+  gender?: Gender;
+};
 export type Train = {
   id: string;
   name: string;
@@ -380,8 +391,10 @@ export function changeLeg(b: Booking, leg: Leg): Booking {
 }
 export const passengerErrors = (b: Booking) => {
   const e: Record<string, string> = {};
-  b.passengers.forEach((p) => {
+  b.passengers.forEach((p, i) => {
     if (p.name.trim().length < 2) e[p.id] = "Enter the traveller’s full name.";
+    if (!genderOptions.some((option) => option.value === p.gender))
+      e[`${p.id}-gender`] = `Select a gender option for Passenger ${i + 1}.`;
   });
   if (b.contact.name.trim().length < 2) e.contactName = "Enter a contact name.";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.contact.email))
@@ -485,6 +498,9 @@ export function restore(raw: string): Booking {
       (p) =>
         !p ||
         typeof p.name !== "string" ||
+        (p.gender !== undefined &&
+          (p.gender as string) !== "other" &&
+          !genderOptions.some((option) => option.value === p.gender)) ||
         !["adult", "child"].includes(p.type) ||
         typeof p.id !== "string" ||
         p.id.includes(":"),
@@ -546,9 +562,24 @@ export function restore(raw: string): Booking {
       b.conflict.seat.number > 16)
   )
     return fail();
+  // Retired choices need a fresh selection without discarding the saved booking.
+  b.passengers.forEach((p) => {
+    if ((p.gender as string | undefined) === "other") delete p.gender;
+  });
+  // Older completed summaries remain readable; missing gender is still unset
+  // and the normal step guard requires it before a subsequent booking edit.
+  const legacyPaidPassengers =
+    earliestStep(b) === 3 &&
+    Object.keys(passengerErrors(b)).every((key) =>
+      b.passengers.some(
+        (p) => key === `${p.id}-gender` && p.gender === undefined,
+      ),
+    ) &&
+    seatsComplete(b);
   if (
     b.status === "paid" &&
-    (!/^DFY-[A-Z0-9]{8}$/.test(b.reference) || earliestStep(b) < 6)
+    (!/^DFY-[A-Z0-9]{8}$/.test(b.reference) ||
+      (earliestStep(b) < 6 && !legacyPaidPassengers))
   )
     return fail();
   return b;

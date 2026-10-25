@@ -36,6 +36,8 @@ import {
   earliestStep,
   fare,
   freshBooking,
+  Gender,
+  genderOptions,
   Leg,
   money,
   Passenger,
@@ -990,6 +992,51 @@ export default function BookingApp({ step }: { step: string }) {
                         <option value="adult">Adult</option>
                         <option value="child">Child</option>
                       </select>
+                    </label>
+                    <label htmlFor={`${p.id}-gender`}>
+                      Gender
+                      <select
+                        id={`${p.id}-gender`}
+                        className={`input ${fieldErrors[`${p.id}-gender`] ? "invalid" : ""}`}
+                        aria-label={`Passenger ${i + 1} gender`}
+                        aria-invalid={!!fieldErrors[`${p.id}-gender`]}
+                        aria-describedby={
+                          fieldErrors[`${p.id}-gender`]
+                            ? `${p.id}-gender-error`
+                            : undefined
+                        }
+                        value={p.gender ?? ""}
+                        required
+                        onChange={(e) =>
+                          save(
+                            updatePassengers(
+                              b,
+                              b.passengers.map((v) =>
+                                v.id === p.id
+                                  ? { ...v, gender: e.target.value as Gender }
+                                  : v,
+                              ),
+                            ),
+                          )
+                        }
+                      >
+                        <option value="" disabled>
+                          Select gender
+                        </option>
+                        {genderOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      {fieldErrors[`${p.id}-gender`] && (
+                        <small
+                          id={`${p.id}-gender-error`}
+                          className="error-text"
+                        >
+                          {fieldErrors[`${p.id}-gender`]}
+                        </small>
+                      )}
                     </label>
                   </div>
                 </article>

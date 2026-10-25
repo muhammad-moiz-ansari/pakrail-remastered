@@ -49,6 +49,7 @@ function group(round = false): Booking {
   b.passengers = Array.from({ length: 3 }, (_, i) => ({
     id: `p${i}`,
     name: `Demo Traveller ${i + 1}`,
+    gender: "prefer_not_to_say" as const,
     type: "adult" as const,
   }));
   b.contact = { name: "Demo Contact", email: "demo@example.com" };
@@ -264,4 +265,69 @@ test("confirmation requires stable paid reference and complete valid booking", (
   b.reference = "DFY-1234ABCD";
   delete b.assignments[seatKey("outbound", "p0")];
   assert.throws(() => restore(JSON.stringify(b)));
+});
+
+test("gender is explicit for every adult and child, with nondisclosure accepted", () => {
+  let b = group();
+  b.passengers[1] = { ...b.passengers[1], type: "child", gender: undefined };
+  assert.equal(
+    passengerErrors(b)["p1-gender"],
+    "Select a gender option for Passenger 2.",
+  );
+  b = updatePassengers(
+    b,
+    b.passengers.map((p) => ({ ...p, gender: "prefer_not_to_say" })),
+  );
+  assert.deepEqual(passengerErrors(b), {});
+  assert.equal(earliestStep(b), 4);
+});
+
+test("gender stays attached to stable IDs across reorder, removal, seats and restore", () => {
+  let b = group();
+  b.passengers[0].gender = "female";
+  b.passengers[1].gender = "male";
+  b = recommend(b);
+  b = updatePassengers(b, [b.passengers[1], b.passengers[0]]);
+  const next = restore(JSON.stringify(b));
+  assert.equal(next.passengers[0].id, "p1");
+  assert.equal(next.passengers[0].gender, "male");
+  assert.equal(next.passengers[1].gender, "female");
+  assert.deepEqual(passengerErrors(next), {});
+  assert.ok(seatsComplete(next));
+  assert.equal(next.assignments["outbound:p2"], undefined);
+});
+
+test("older drafts leave gender unset and return to passenger validation", () => {
+  const b = recommend(group());
+  b.passengers.forEach((p) => {
+    delete p.gender;
+  });
+  const next = restore(JSON.stringify(b));
+  assert.equal(next.passengers[0].gender, undefined);
+  assert.equal(earliestStep(next), 3);
+  assert.equal(Object.keys(passengerErrors(next)).length, 3);
+  assert.throws(() =>
+    restore(
+      JSON.stringify({
+        ...b,
+        passengers: [{ ...b.passengers[0], gender: "unknown" }],
+      }),
+    ),
+  );
+});
+
+test("retired Other selections become unset without losing passenger details", () => {
+  const b = group();
+  const raw = JSON.stringify({
+    ...b,
+    passengers: b.passengers.map((p, i) =>
+      i === 1 ? { ...p, gender: "other" } : p,
+    ),
+  });
+  const next = restore(raw);
+  assert.equal(next.passengers[1].gender, undefined);
+  assert.equal(next.passengers[1].id, b.passengers[1].id);
+  assert.equal(next.passengers[1].name, b.passengers[1].name);
+  assert.equal(next.passengers[0].gender, "prefer_not_to_say");
+  assert.ok(passengerErrors(next)["p1-gender"]);
 });

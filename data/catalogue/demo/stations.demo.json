@@ -1,0 +1,104 @@
+[
+  {
+    "id": "LHE",
+    "name": "LAHORE JN.",
+    "city": null,
+    "aliases": [],
+    "active": true,
+    "provenance": {
+      "sourceUrl": null,
+      "sourceTitle": "Existing local prototype fixtures",
+      "retrievedAt": "2026-11-02T00:00:00+05:00",
+      "verifiedAt": null,
+      "verificationStatus": "unverified",
+      "dataOrigin": "demo",
+      "notes": "Fictional development fixtures. IDs are not verified railway station codes."
+    },
+    "fieldSources": {}
+  },
+  {
+    "id": "RWP",
+    "name": "RAWALPINDI",
+    "city": null,
+    "aliases": [],
+    "active": true,
+    "provenance": {
+      "sourceUrl": null,
+      "sourceTitle": "Existing local prototype fixtures",
+      "retrievedAt": "2026-11-02T00:00:00+05:00",
+      "verifiedAt": null,
+      "verificationStatus": "unverified",
+      "dataOrigin": "demo",
+      "notes": "Fictional development fixtures. IDs are not verified railway station codes."
+    },
+    "fieldSources": {}
+  },
+  {
+    "id": "KHI",
+    "name": "KARACHI CANTT",
+    "city": null,
+    "aliases": [],
+    "active": true,
+    "provenance": {
+      "sourceUrl": null,
+      "sourceTitle": "Existing local prototype fixtures",
+      "retrievedAt": "2026-11-02T00:00:00+05:00",
+      "verifiedAt": null,
+      "verificationStatus": "unverified",
+      "dataOrigin": "demo",
+      "notes": "Fictional development fixtures. IDs are not verified railway station codes."
+    },
+    "fieldSources": {}
+  },
+  {
+    "id": "ISB",
+    "name": "MARGALA",
+    "city": null,
+    "aliases": [],
+    "active": true,
+    "provenance": {
+      "sourceUrl": null,
+      "sourceTitle": "Existing local prototype fixtures",
+      "retrievedAt": "2026-11-02T00:00:00+05:00",
+      "verifiedAt": null,
+      "verificationStatus": "unverified",
+      "dataOrigin": "demo",
+      "notes": "Fictional development fixtures. IDs are not verified railway station codes."
+    },
+    "fieldSources": {}
+  },
+  {
+    "id": "MUX",
+    "name": "MULTAN CANTT",
+    "city": null,
+    "aliases": [],
+    "active": true,
+    "provenance": {
+      "sourceUrl": null,
+      "sourceTitle": "Existing local prototype fixtures",
+      "retrievedAt": "2026-11-02T00:00:00+05:00",
+      "verifiedAt": null,
+      "verificationStatus": "unverified",
+      "dataOrigin": "demo",
+      "notes": "Fictional development fixtures. IDs are not verified railway station codes."
+    },
+    "fieldSources": {}
+  },
+  {
+    "id": "FSD",
+    "name": "FAISALABAD",
+    "city": null,
+    "aliases": [],
+    "active": true,
+    "provenance": {
+      "sourceUrl": null,
+      "sourceTitle": "Existing local prototype fixtures",
+      "retrievedAt": "2026-11-02T00:00:00+05:00",
+      "verifiedAt": null,
+      "verificationStatus": "unverified",
+      "dataOrigin": "demo",
+      "notes": "Fictional development fixtures. IDs are not verified railway station codes."
+    },
+    "fieldSources": {}
+  }
+]

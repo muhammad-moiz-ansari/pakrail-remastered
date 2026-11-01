@@ -1,0 +1,2 @@
+id,provenance,routeId,effectiveFrom,effectiveTo,operatingWeekdays
+example-schedule,"{""sourceUrl"":null,""sourceTitle"":""Template only"",""retrievedAt"":""2026-11-02T00:00:00+05:00"",""verifiedAt"":null,""verificationStatus"":""unverified"",""dataOrigin"":""manually-entered"",""notes"":""Replace this template with sourced facts before import.""}",example-route,,,

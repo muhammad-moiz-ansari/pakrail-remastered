@@ -1,0 +1,34 @@
+[
+  {
+    "id": "example-route",
+    "provenance": {
+      "sourceUrl": null,
+      "sourceTitle": "Template only",
+      "retrievedAt": "2026-11-02T00:00:00+05:00",
+      "verifiedAt": null,
+      "verificationStatus": "unverified",
+      "dataOrigin": "manually-entered",
+      "notes": "Replace this template with sourced facts before import."
+    },
+    "trainId": "example-train",
+    "variant": "example-direction",
+    "stops": [
+      {
+        "stationId": "example-origin",
+        "sequence": 1,
+        "arrivalTime": null,
+        "departureTime": null,
+        "arrivalDayOffset": null,
+        "departureDayOffset": null
+      },
+      {
+        "stationId": "example-destination",
+        "sequence": 2,
+        "arrivalTime": null,
+        "departureTime": null,
+        "arrivalDayOffset": null,
+        "departureDayOffset": null
+      }
+    ]
+  }
+]

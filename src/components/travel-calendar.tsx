@@ -258,7 +258,7 @@ export default function TravelCalendar({
         </button>
       </div>
       <div className="calendar-context">
-        {station(s.from)} <ArrowRight size={14} /> {station(s.to)}
+        {station(s.from, s)} <ArrowRight size={14} /> {station(s.to, s)}
         <span>
           Departure: {prettyDate(s.date)}
           {s.returnDate

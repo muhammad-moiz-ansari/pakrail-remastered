@@ -6,8 +6,15 @@ export const stations = [
   { id: "MUX", name: "Multan Cantonment", city: "Multan", code: "MUX" },
   { id: "FSD", name: "Faisalabad", city: "Faisalabad", code: "FSD" },
 ];
-export const station = (id: string) =>
-  stations.find((s) => s.id === id)?.name ?? "Choose station";
+export const station = (id: string, search?: Search) =>
+  search?.stationNames?.[id] ??
+  stations.find((s) => s.id === id)?.name ??
+  "Choose station";
+export const knownStation = (id: string, search: Search) =>
+  stations.some((s) => s.id === id) ||
+  (/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$/.test(id) &&
+    typeof search.stationNames?.[id] === "string" &&
+    search.stationNames[id].trim().length > 0);
 export const money = (n: number) => `PKR ${n.toLocaleString("en-PK")}`;
 export function today() {
   const p = new Intl.DateTimeFormat("en-CA", {
@@ -74,6 +81,7 @@ export type Search = {
   trip: "undecided" | "oneway" | "return";
   adults: number;
   children: number;
+  stationNames?: Record<string, string>;
 };
 export const genderOptions = [
   { value: "male", label: "Male" },
@@ -150,9 +158,8 @@ export function validDate(d: unknown): d is string {
 }
 export function searchErrors(s: Search) {
   const e: Record<string, string> = {};
-  if (!stations.some((v) => v.id === s.from))
-    e.from = "Choose a departure station.";
-  if (!stations.some((v) => v.id === s.to)) e.to = "Choose an arrival station.";
+  if (!knownStation(s.from, s)) e.from = "Choose a departure station.";
+  if (!knownStation(s.to, s)) e.to = "Choose an arrival station.";
   if (s.from && s.from === s.to) e.to = "Choose a different arrival station.";
   if (!validDate(s.date) || s.date < today())
     e.date = "Choose today or a future departure date.";
@@ -477,6 +484,20 @@ export function restore(raw: string): Booking {
     return fail();
   const s = b.search;
   if (
+    s.stationNames &&
+    (typeof s.stationNames !== "object" ||
+      Array.isArray(s.stationNames) ||
+      Object.entries(s.stationNames).length > 30 ||
+      Object.entries(s.stationNames).some(
+        ([id, name]) =>
+          !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$/.test(id) ||
+          typeof name !== "string" ||
+          !name.trim() ||
+          name.length > 500,
+      ))
+  )
+    return fail();
+  if (
     !validDate(s.date) ||
     s.date < today() ||
     typeof s.from !== "string" ||
@@ -523,8 +544,8 @@ export function restore(raw: string): Booking {
         !validDate(l.train.date) ||
         !Number.isFinite(l.train.price) ||
         l.train.price < 0 ||
-        !stations.some((v) => v.id === l.train.from) ||
-        !stations.some((v) => v.id === l.train.to) ||
+        !knownStation(l.train.from, s) ||
+        !knownStation(l.train.to, s) ||
         !/^\d{2}:\d{2}$/.test(l.train.departure) ||
         !/^\d{2}:\d{2}$/.test(l.train.arrival) ||
         !Number.isFinite(l.train.duration) ||

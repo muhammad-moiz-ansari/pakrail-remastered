@@ -599,6 +599,10 @@ export default function BookingApp({ step }: { step: string }) {
                     {prettyDate(outbound.train.date)}
                   </div>
                 )}
+                <p className="subtle" role="note">
+                  Prototype timetable, fares and seats. Station catalogue
+                  results do not confirm a bookable railway service.
+                </p>
                 <div className="results-tools">
                   <span role="status">
                     <b>{options.length} trains</b> ·{" "}
@@ -706,7 +710,7 @@ export default function BookingApp({ step }: { step: string }) {
                           <span className="journey-line">
                             <span>
                               <b>{t.departure}</b>
-                              <small>{station(t.from)}</small>
+                              <small>{station(t.from, b.search)}</small>
                             </span>
                             <span className="duration">
                               <small>
@@ -721,7 +725,7 @@ export default function BookingApp({ step }: { step: string }) {
                                 {t.arrival}
                                 {t.arrivalDay > 0 && <sup>+{t.arrivalDay}</sup>}
                               </b>
-                              <small>{station(t.to)}</small>
+                              <small>{station(t.to, b.search)}</small>
                             </span>
                           </span>
                           <span className="fare">
@@ -786,6 +790,7 @@ export default function BookingApp({ step }: { step: string }) {
               </section>
               <aside>
                 <RoutePreview
+                  search={b.search}
                   from={legId === "outbound" ? b.search.from : b.search.to}
                   to={legId === "outbound" ? b.search.to : b.search.from}
                 />
@@ -810,7 +815,8 @@ export default function BookingApp({ step }: { step: string }) {
                   <TrainFront size={18} />
                   <b>{leg.train.name}</b>
                   <span>
-                    {station(leg.train.from)} → {station(leg.train.to)}
+                    {station(leg.train.from, b.search)} →{" "}
+                    {station(leg.train.to, b.search)}
                   </span>
                   <span>
                     {prettyDate(leg.train.date)} · {count} traveller
@@ -1177,7 +1183,8 @@ export default function BookingApp({ step }: { step: string }) {
                     {prettyDate(leg.train.date)}
                   </span>
                   <span>
-                    {station(leg.train.from)} → {station(leg.train.to)}
+                    {station(leg.train.from, b.search)} →{" "}
+                    {station(leg.train.to, b.search)}
                   </span>
                 </div>
                 <div className="seat-layout">
@@ -1499,8 +1506,8 @@ export default function BookingApp({ step }: { step: string }) {
                     </button>
                   </div>
                   <h2>
-                    {station(l.train.from)} <ArrowRight size={19} />{" "}
-                    {station(l.train.to)}
+                    {station(l.train.from, b.search)} <ArrowRight size={19} />{" "}
+                    {station(l.train.to, b.search)}
                   </h2>
                   <div className="review-meta">
                     <span>
@@ -1713,8 +1720,8 @@ export default function BookingApp({ step }: { step: string }) {
                         {classes.find((c) => c.id === l.classId)?.name}
                       </span>
                       <h2>
-                        {station(l.train.from)} <ArrowRight size={20} />{" "}
-                        {station(l.train.to)}
+                        {station(l.train.from, b.search)}{" "}
+                        <ArrowRight size={20} /> {station(l.train.to, b.search)}
                       </h2>
                       <p>
                         {prettyDate(l.train.date)} · {l.train.departure} →{" "}
@@ -1782,7 +1789,15 @@ export default function BookingApp({ step }: { step: string }) {
 function CalendarIcon() {
   return <Clock size={16} />;
 }
-function RoutePreview({ from, to }: { from: string; to: string }) {
+function RoutePreview({
+  from,
+  to,
+  search,
+}: {
+  from: string;
+  to: string;
+  search: Search;
+}) {
   return (
     <div className="panel route-preview">
       <span className="eyebrow">YOUR JOURNEY AT A GLANCE</span>
@@ -1791,11 +1806,11 @@ function RoutePreview({ from, to }: { from: string; to: string }) {
         <div className="route-stations">
           <span>
             <i />
-            {station(from)}
+            {station(from, search)}
           </span>
           <span>
             <i />
-            {station(to)}
+            {station(to, search)}
           </span>
         </div>
         <MapPin size={58} strokeWidth={1} />
@@ -1843,9 +1858,9 @@ function Summary({ b }: { b: Booking }) {
             {l.id === "outbound" ? "OUTBOUND" : "RETURN"}
           </span>
           <h3>
-            {station(l.train.from)}
+            {station(l.train.from, b.search)}
             <ArrowRight size={16} />
-            {station(l.train.to)}
+            {station(l.train.to, b.search)}
           </h3>
           <p>
             {prettyDate(l.train.date)} · {l.train.departure}

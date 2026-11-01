@@ -4,7 +4,7 @@ A responsive train-booking interface built with Next.js App Router, React and Ty
 
 ## Run locally
 
-Requires Node.js 22.13+ and npm. No environment variables or service credentials are required.
+Requires Node.js 22.13+ and npm. Station search uses MongoDB Atlas by default; see [backend setup](docs/backend/setup.md) for server-only environment variables and the review-first import workflow. Explicit `STATION_DATA_PROVIDER=demo` enables labelled development fixtures without MongoDB.
 
 ```powershell
 npm ci
@@ -33,7 +33,7 @@ Build before running `npm start`; stop the development server first if it uses t
 5. Review and edit the journey, group, seats and total. The existing fixture voucher `DEMO10` still applies a 10% discount, rounded once; the public interface no longer advertises tester codes.
 6. Complete the clearly labelled test payment to view a printable booking summary. No money is charged, no credentials are collected, no email is sent and the summary is not valid for travel.
 
-The six supported stations, sample services, class fixtures, pricing, allocation and return-leg validation are retained. There is no live timetable, railway inventory, account service, payment integration or ticket issuance. Class amenities, capacity and photographs are illustrative. Destination shortcuts change only the arrival station and retain the origin, dates and passenger counts; choosing the origin as a destination shows validation feedback.
+Station selectors now use the shared `/api/stations` catalogue endpoint. The six editorial shortcuts and existing sample services, class fixtures, pricing, allocation and return-leg validation are retained as prototype functionality. There is no live timetable, railway inventory, account service, payment integration or ticket issuance. Class amenities, capacity and photographs are illustrative. Destination shortcuts change only the arrival station and retain the origin, dates and passenger counts; choosing the origin as a destination shows validation feedback.
 
 Drafts remain in this tab's versioned `sessionStorage`. Existing storage keys and passenger data are preserved. Retired tester scenarios are normalized to ordinary booking state when restored. `/demo` and `/part-a/index.html` redirect to the homepage. The separately preserved academic wireframe remains at `academic/part-a/index.html` and can be opened offline; it is not linked or served as a customer mode.
 
@@ -48,3 +48,5 @@ Drafts remain in this tab's versioned `sessionStorage`. Existing storage keys an
 See `docs/ui-refresh.md` for implementation choices, validation and image replacement notes. Image attribution is also accessible from the website footer.
 
 The Our people page and shared footer additions are documented in `docs/our-people-footer.md`, including exact portrait mappings, temporary photography, breadcrumb route metadata, RABTA links and social icon sources.
+
+Backend model, imports and booking boundaries: [setup guide](docs/backend/setup.md). Public source observations: [reference inspection](docs/backend/reference-inspection.md). The first station import is prepared and dry-run checked, not applied.

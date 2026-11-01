@@ -13,13 +13,8 @@ import {
   Users,
   X,
 } from "lucide-react";
-import {
-  prettyDate,
-  searchErrors,
-  Search,
-  station,
-  stations,
-} from "@/lib/booking";
+import { prettyDate, searchErrors, Search, station } from "@/lib/booking";
+import { PublicStation } from "@/lib/station-search";
 import TravelCalendar from "./travel-calendar";
 import { selectCalendarDate } from "@/lib/calendar-range";
 type Props = {
@@ -43,6 +38,50 @@ export default function SearchForm({
   const [month, setMonth] = useState(s.date.slice(0, 7));
   const [calendarSession, setCalendarSession] = useState(0);
   const [active, setActive] = useState(0);
+  const [options, setOptions] = useState<PublicStation[]>([]);
+  const [stationStatus, setStationStatus] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
+  const [stationProvider, setStationProvider] = useState("");
+  const [retry, setRetry] = useState(0);
+  const requestSequence = useRef(0);
+  useEffect(() => {
+    if (open !== "from" && open !== "to") return;
+    const controller = new AbortController();
+    const sequence = ++requestSequence.current;
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/stations?q=${encodeURIComponent(query.trim())}`,
+          { signal: controller.signal, cache: "no-store" },
+        );
+        if (!response.ok) throw new Error("Station search unavailable");
+        const data = await response.json();
+        if (
+          !Array.isArray(data.stations) ||
+          !["mongodb", "demo"].includes(data.provider)
+        )
+          throw new Error("Invalid station response");
+        if (sequence !== requestSequence.current || controller.signal.aborted)
+          return;
+        setOptions(data.stations);
+        setStationProvider(data.provider);
+        setStationStatus("ready");
+      } catch {
+        if (
+          !controller.signal.aborted &&
+          sequence === requestSequence.current
+        ) {
+          setOptions([]);
+          setStationStatus("error");
+        }
+      }
+    }, 250);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query, open, retry]);
   const root = useRef<HTMLFormElement>(null);
   const origin = useRef<HTMLButtonElement | null>(null);
   const stationInput = useRef<HTMLInputElement>(null);
@@ -85,6 +124,8 @@ export default function SearchForm({
   }, [open]);
   const show = (name: string, el: HTMLButtonElement) => {
     origin.current = el;
+    setOptions([]);
+    setStationStatus("loading");
     setQuery("");
     setActive(0);
     if (name === "depart" || name === "return") {
@@ -94,14 +135,23 @@ export default function SearchForm({
     } else setOpen(open === name ? "" : name);
     setGuided(name === "from" && !s.from);
   };
-  const options = stations.filter((v) =>
-    `${v.name} ${v.city} ${v.code}`.toLowerCase().includes(query.toLowerCase()),
-  );
   const selectStation = (id: string) => {
+    if (stationStatus !== "ready") return;
+    const selected = options.find((option) => option.id === id);
+    if (!selected) return;
     const name = open;
-    patch({ [name]: id });
+    patch({
+      [name]: id,
+      stationNames: Object.fromEntries(
+        [...new Set([s.from, s.to, id])]
+          .filter(Boolean)
+          .map((key) => [key, key === id ? selected.name : station(key, s)]),
+      ),
+    });
     if (guided && name === "from") {
       setOpen("to");
+      setOptions([]);
+      setStationStatus("loading");
       setQuery("");
       setActive(0);
     } else if (guided && name === "to") {
@@ -182,7 +232,7 @@ export default function SearchForm({
                 </small>
                 <strong className={!s[field] ? "placeholder" : ""}>
                   {s[field]
-                    ? station(s[field])
+                    ? station(s[field], s)
                     : i === 0
                       ? "Where from?"
                       : "Where to?"}
@@ -297,12 +347,16 @@ export default function SearchForm({
             aria-controls="station-list"
             aria-expanded="true"
             aria-activedescendant={
-              options[active] ? `station-${options[active].id}` : undefined
+              stationStatus === "ready" && options[active]
+                ? `station-${options[active].id}`
+                : undefined
             }
             placeholder="Search city or station"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
+              setOptions([]);
+              setStationStatus("loading");
               setActive(0);
             }}
             onKeyDown={(e) => {
@@ -314,13 +368,43 @@ export default function SearchForm({
                     Math.max(1, options.length),
                 );
               }
-              if (e.key === "Enter" && options[active]) {
+              if (e.key === "Enter") {
                 e.preventDefault();
-                selectStation(options[active].id);
+                if (options[active]) selectStation(options[active].id);
               }
             }}
           />
-          <ul id="station-list" role="listbox" aria-label="Stations">
+          <p className="subtle" role="status">
+            {stationProvider === "demo"
+              ? "Demo station fixtures"
+              : stationProvider === "mongodb"
+                ? "Station catalogue"
+                : ""}
+          </p>
+          {stationStatus === "loading" && (
+            <p role="status">Finding stations…</p>
+          )}
+          {stationStatus === "error" && (
+            <div role="alert">
+              <p>Station search is unavailable. Please try again.</p>
+              <button
+                type="button"
+                className="button secondary"
+                onClick={() => {
+                  setStationStatus("loading");
+                  setRetry((v) => v + 1);
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          <ul
+            aria-busy={stationStatus === "loading"}
+            id="station-list"
+            role="listbox"
+            aria-label="Stations"
+          >
             {options.map((v, i) => (
               <li
                 id={`station-${v.id}`}
@@ -337,13 +421,13 @@ export default function SearchForm({
                   <MapPin size={17} />
                   <span>
                     <b>{v.name}</b>
-                    <small>{v.city}, Pakistan</small>
+                    {v.city && <small>{v.city}, Pakistan</small>}
                   </span>
                   <span className="station-code">{v.code}</span>
                 </button>
               </li>
             ))}
-            {!options.length && (
+            {stationStatus === "ready" && !options.length && (
               <li className="empty-option" role="status">
                 No stations found. Try a city such as Lahore.
               </li>

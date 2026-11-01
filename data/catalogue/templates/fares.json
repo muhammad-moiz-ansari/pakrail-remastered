@@ -1,0 +1,23 @@
+[
+  {
+    "id": "example-fare",
+    "provenance": {
+      "sourceUrl": null,
+      "sourceTitle": "Template only",
+      "retrievedAt": "2026-11-02T00:00:00+05:00",
+      "verifiedAt": null,
+      "verificationStatus": "unverified",
+      "dataOrigin": "manually-entered",
+      "notes": "Replace this template with sourced facts before import."
+    },
+    "routeId": "example-route",
+    "originId": "example-origin",
+    "destinationId": "example-destination",
+    "classId": "example-class",
+    "passengerCategory": null,
+    "amountMinor": null,
+    "currency": "PKR",
+    "effectiveFrom": null,
+    "effectiveTo": null
+  }
+]

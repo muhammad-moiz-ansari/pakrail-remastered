@@ -778,6 +778,25 @@ button {
   color: var(--text);
   box-shadow: 0 24px 80px #0c281d44;
 }
+.class-card-preview {
+  margin-top: 10px;
+  color: #f2ead9;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 42ch;
+}
+.class-detail-dialog {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+.class-detail-dialog h3 {
+  margin-top: 20px;
+  font-size: 16px;
+  color: var(--brand-deep);
+}
+.class-detail-dialog li svg {
+  flex-shrink: 0;
+}
 .class-detail-dialog::backdrop {
   background: #0b251b99;
   backdrop-filter: blur(3px);

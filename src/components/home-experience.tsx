@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { ArrowRight, Check, X } from "lucide-react";
 import { classes } from "@/lib/booking";
+import { classInformation } from "@/lib/class-content";
 import { homeAssets } from "@/lib/home-content";
 import HomePhoto from "./home-photo";
 import { focusBooking } from "./booking-navigation";
@@ -17,6 +18,8 @@ const photographs = {
 export default function HomeExperience() {
   const [selected, setSelected] = useState(classes[0]);
   const detail = useRef<HTMLDialogElement>(null);
+  const information =
+    classInformation[selected.id as keyof typeof classInformation];
   return (
     <section
       className="experience-section"
@@ -75,6 +78,12 @@ export default function HomeExperience() {
               <span className="tile-copy">
                 <span className="eyebrow">TRAVEL CLASSES</span>
                 <h3>{c.name}</h3>
+                <span className="class-card-preview">
+                  {
+                    classInformation[c.id as keyof typeof classInformation]
+                      .preview
+                  }
+                </span>
                 <span className="tile-action">
                   Explore class <ArrowRight size={17} />
                 </span>
@@ -104,19 +113,19 @@ export default function HomeExperience() {
           </button>
         </div>
         <h2 id="class-detail-title">{selected.name}</h2>
-        <p>{selected.description}</p>
+        <p>{information.introduction}</p>
+        <h3>Accommodation</h3>
+        <p>{information.accommodation}</p>
         <ul>
-          <li>
-            <Check size={17} /> Compare the class fare for your chosen train.
-          </li>
-          <li>
-            <Check size={17} /> Choose seats for each traveller before
-            continuing.
-          </li>
-          <li>
-            <Check size={17} /> Review the full group total before payment.
-          </li>
+          {information.features.map((feature) => (
+            <li key={feature}>
+              <Check size={17} aria-hidden="true" />
+              <span>{feature}</span>
+            </li>
+          ))}
         </ul>
+        <h3>Who it suits</h3>
+        <p>{information.suitedTo}</p>
         <p className="class-integrity">
           Coach variants follow the supplied railway references. Service
           configurations, fares and availability in this booking flow remain

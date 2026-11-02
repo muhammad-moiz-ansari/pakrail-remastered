@@ -14,7 +14,7 @@ npm ci
 npm run db:check
 ```
 
-The check is a read-only ping. It does not create catalogue records or indexes. A live Atlas ping and database-aware station dry-run succeeded on 2026-11-02. The first station records have **not** been applied. See `first-station-dry-run.txt`.
+The check is a read-only ping. It does not create catalogue records or indexes. A live Atlas ping and database-aware station dry-run succeeded on 2026-11-02. After user approval on 2026-11-02, catalogue indexes were initialized and all six station records were applied. The post-import dry-run reports 6 unchanged, 0 inserts, 0 updates and 0 rejects. Live `/api/stations` checks found each of the six records with provider `mongodb` and minimal public fields. See `approved-station-import.txt`, `approved-station-postcheck.txt` and `live-station-api-check.txt`; `first-station-dry-run.txt` preserves the original review.
 
 Connection setup is lazy: no database is required during `next build`. `src/server/db/mongodb.ts` caches one client pool globally across development reloads, resets failed connections, bounds connection/query waits and sanitizes configuration/connection errors. `src/server/stations.ts` is guarded by `server-only`. Database routes declare the Node.js runtime. CLI modules share the connection core without importing the Next-only guard. Do not import `src/server/**` into client components.
 

@@ -43,10 +43,12 @@ Drafts remain in this tab's versioned `sessionStorage`. Existing storage keys an
 - All destination and class photo paths, alternative text and focal points are centralized in `src/lib/home-content.ts`. Update the credits page and `references/home-asset-downloads.json` when replacing a photograph.
 - The supplied `public/logo.png` is used without alteration. `public/logo-full.png` is also preserved. Typography uses local files in `public/fonts/`, with their SIL Open Font Licenses included.
 - Homepage components live in `src/components/homepage.tsx`, `home-experience.tsx`, `site-header.tsx` and `site-footer.tsx`. Shared styling is in `src/app/marketing.css`; existing booking layouts remain in `src/app/globals.css`.
-- Informational links open implemented local pages. Careers links to the verified official recruitment page. Unverified contact details, social accounts and railway policy text have not been invented.
+- Informational links open implemented local pages. Careers opens our local database-backed notices page. Unverified contact details, social accounts and railway policy text have not been invented.
 
 See `docs/ui-refresh.md` for implementation choices, validation and image replacement notes. Image attribution is also accessible from the website footer.
 
 The Our people page and shared footer additions are documented in `docs/our-people-footer.md`, including exact portrait mappings, temporary photography, breadcrumb route metadata, RABTA links and social icon sources.
 
-Backend model, imports and booking boundaries: [setup guide](docs/backend/setup.md). Public source observations: [reference inspection](docs/backend/reference-inspection.md). The first station import is prepared and dry-run checked, not applied.
+Backend model, imports and booking boundaries: [setup guide](docs/backend/setup.md). Public source observations: [reference inspection](docs/backend/reference-inspection.md). The first six public station records were imported into Atlas after explicit approval; catalogue indexes and live station API checks are verified.
+
+Careers is implemented at `/careers`, backed by 295 imported official notices. See [Careers setup and verification](docs/backend/careers.md) for commands, source coverage and limitations.

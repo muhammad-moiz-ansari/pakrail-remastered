@@ -1,0 +1,54 @@
+{
+  "checks": [
+    {
+      "query": "Lahore",
+      "status": 200,
+      "provider": "mongodb",
+      "ids": [
+        "LHE"
+      ]
+    },
+    {
+      "query": "Rawalpindi",
+      "status": 200,
+      "provider": "mongodb",
+      "ids": [
+        "RWP"
+      ]
+    },
+    {
+      "query": "Karachi",
+      "status": 200,
+      "provider": "mongodb",
+      "ids": [
+        "KHI"
+      ]
+    },
+    {
+      "query": "Margala",
+      "status": 200,
+      "provider": "mongodb",
+      "ids": [
+        "ISB"
+      ]
+    },
+    {
+      "query": "Multan",
+      "status": 200,
+      "provider": "mongodb",
+      "ids": [
+        "MUX"
+      ]
+    },
+    {
+      "query": "Faisalabad",
+      "status": 200,
+      "provider": "mongodb",
+      "ids": [
+        "FSD"
+      ]
+    }
+  ],
+  "totalStations": 6,
+  "publicResponseCheck": "passed"
+}

@@ -34,3 +34,13 @@ test("unknown and future routes do not accidentally inherit another page's bread
     "Test payment",
   );
 });
+
+test("Careers has a local route-aware breadcrumb on direct and trailing-slash navigation", () => {
+  const expected = [
+    { label: "Pakistan Railways", href: "/" },
+    { label: "About us", href: "/information/about" },
+    { label: "Careers" },
+  ];
+  assert.deepEqual(breadcrumbsForPath("/careers"), expected);
+  assert.deepEqual(breadcrumbsForPath("/careers/"), expected);
+});

@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { stations } from "@/lib/booking";
-import { officialLinks } from "@/lib/home-content";
 import PeoplePage from "@/components/people-page";
 import { informationPages, isInformationTopic } from "@/lib/site-routes";
 export function generateStaticParams() {
@@ -217,14 +216,9 @@ export default async function Information({
                 <Link href="/information/credits">Image credits</Link>
               </li>
               <li>
-                <a
-                  href={officialLinks.careers}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Official careers <ArrowUpRight size={13} />
-                  <span className="sr-only"> (opens a new tab)</span>
-                </a>
+                <Link href="/careers">
+                  Careers <ArrowRight size={13} />
+                </Link>
               </li>
             </ul>
           </section>

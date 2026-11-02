@@ -1,3 +1,4 @@
+import AboutCover from "./about-cover";
 import Image from "next/image";
 import { ArrowDown } from "lucide-react";
 import {
@@ -10,26 +11,11 @@ import {
 export default function PeoplePage() {
   return (
     <main id="main-content" className="people-page">
-      <section className="people-cover" aria-labelledby="people-title">
-        <Image
-          src={peopleAssets.cover.src}
-          alt={peopleAssets.cover.alt}
-          fill
-          sizes="100vw"
-          priority
-          style={{
-            objectFit: "cover",
-            objectPosition: peopleAssets.cover.position,
-          }}
-        />
-        <div className="people-cover-shade" />
-        <div className="rail-container people-cover-copy">
-          <span className="eyebrow">ABOUT PAKISTAN RAILWAYS</span>
-          <h1 id="people-title">Our people</h1>
-          <p>The people behind every journey.</p>
-        </div>
-        <span className="people-cover-caption">RAWALPINDI RAILWAY STATION</span>
-      </section>
+      <AboutCover
+        title="Our people"
+        description="The people behind every journey."
+        id="people-title"
+      />
       <section
         className="people-introduction rail-container"
         aria-labelledby="people-introduction-title"

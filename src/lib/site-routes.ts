@@ -46,6 +46,8 @@ const bookingPages: Record<string, string> = {
 export function breadcrumbsForPath(pathname: string): BreadcrumbItem[] {
   const home = { label: "Pakistan Railways", href: "/" };
   const normalized = pathname === "/" ? pathname : pathname.replace(/\/$/, "");
+  if (normalized === "/careers")
+    return [home, ancestors.about, { label: "Careers" }];
   const topic = normalized.split("/")[2];
   if (normalized === `/information/${topic}` && isInformationTopic(topic)) {
     const page = informationPages[topic];

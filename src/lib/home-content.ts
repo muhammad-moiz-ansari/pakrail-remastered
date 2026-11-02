@@ -99,7 +99,7 @@ export const footerGroups = [
     links: [
       { label: "Introduction", href: "/information/about" },
       { label: "Our people", href: "/information/people" },
-      { label: "Careers", href: officialLinks.careers, external: true },
+      { label: "Careers", href: "/careers" },
     ],
   },
   {

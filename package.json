@@ -12,10 +12,12 @@
     "format:check": "prettier --check src tests scripts package.json tsconfig.json eslint.config.mjs",
     "db:check": "tsx scripts/catalogue.ts check",
     "db:indexes": "tsx scripts/catalogue.ts indexes",
-    "catalogue:import": "tsx scripts/catalogue.ts import"
+    "catalogue:import": "tsx scripts/catalogue.ts import",
+    "careers:import": "tsx scripts/careers.ts"
   },
   "dependencies": {
     "@next/env": "^16.4.3",
+    "cheerio": "^1.2.0",
     "csv-parse": "^7.0.3",
     "lucide-react": "^0.468.0",
     "mongodb": "^7.8.0",

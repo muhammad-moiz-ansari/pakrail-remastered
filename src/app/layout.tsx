@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./marketing.css";
 import "./people.css";
+import "./careers.css";
 import localFont from "next/font/local";
 import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";

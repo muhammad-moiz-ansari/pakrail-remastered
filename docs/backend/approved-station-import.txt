@@ -1,0 +1,183 @@
+{
+  "mode": "apply-plan",
+  "referenceChecks": "database checked",
+  "collection": "stations",
+  "counts": {
+    "inserted": 6,
+    "updated": 0,
+    "unchanged": 0,
+    "rejected": 0
+  },
+  "errors": [],
+  "proposedRecords": [
+    {
+      "action": "inserted",
+      "id": "LHE",
+      "provenance": {
+        "sourceUrl": "https://www.pakrailways.gov.pk/home",
+        "sourceTitle": "RABTA public From station selector",
+        "retrievedAt": "2026-11-02T00:00:00+05:00",
+        "verifiedAt": "2026-11-02T00:00:00+05:00",
+        "verificationStatus": "verified",
+        "dataOrigin": "official-public",
+        "notes": "Displayed station name only verified on 2026-11-02. Timestamp uses date precision (midnight Asia/Karachi); no official station code, city, timetable or live availability inferred."
+      },
+      "fieldSources": {
+        "active": {
+          "sourceUrl": null,
+          "sourceTitle": "Local catalogue visibility decision",
+          "retrievedAt": "2026-11-02T00:00:00+05:00",
+          "verifiedAt": null,
+          "verificationStatus": "unverified",
+          "dataOrigin": "manually-entered",
+          "notes": "active controls local station-search visibility, not operational status."
+        }
+      },
+      "name": "LAHORE JN.",
+      "city": null,
+      "aliases": [],
+      "active": true
+    },
+    {
+      "action": "inserted",
+      "id": "RWP",
+      "provenance": {
+        "sourceUrl": "https://www.pakrailways.gov.pk/home",
+        "sourceTitle": "RABTA public From station selector",
+        "retrievedAt": "2026-11-02T00:00:00+05:00",
+        "verifiedAt": "2026-11-02T00:00:00+05:00",
+        "verificationStatus": "verified",
+        "dataOrigin": "official-public",
+        "notes": "Displayed station name only verified on 2026-11-02. Timestamp uses date precision (midnight Asia/Karachi); no official station code, city, timetable or live availability inferred."
+      },
+      "fieldSources": {
+        "active": {
+          "sourceUrl": null,
+          "sourceTitle": "Local catalogue visibility decision",
+          "retrievedAt": "2026-11-02T00:00:00+05:00",
+          "verifiedAt": null,
+          "verificationStatus": "unverified",
+          "dataOrigin": "manually-entered",
+          "notes": "active controls local station-search visibility, not operational status."
+        }
+      },
+      "name": "RAWALPINDI",
+      "city": null,
+      "aliases": [],
+      "active": true
+    },
+    {
+      "action": "inserted",
+      "id": "KHI",
+      "provenance": {
+        "sourceUrl": "https://www.pakrailways.gov.pk/home",
+        "sourceTitle": "RABTA public From station selector",
+        "retrievedAt": "2026-11-02T00:00:00+05:00",
+        "verifiedAt": "2026-11-02T00:00:00+05:00",
+        "verificationStatus": "verified",
+        "dataOrigin": "official-public",
+        "notes": "Displayed station name only verified on 2026-11-02. Timestamp uses date precision (midnight Asia/Karachi); no official station code, city, timetable or live availability inferred."
+      },
+      "fieldSources": {
+        "active": {
+          "sourceUrl": null,
+          "sourceTitle": "Local catalogue visibility decision",
+          "retrievedAt": "2026-11-02T00:00:00+05:00",
+          "verifiedAt": null,
+          "verificationStatus": "unverified",
+          "dataOrigin": "manually-entered",
+          "notes": "active controls local station-search visibility, not operational status."
+        }
+      },
+      "name": "KARACHI CANTT",
+      "city": null,
+      "aliases": [],
+      "active": true
+    },
+    {
+      "action": "inserted",
+      "id": "ISB",
+      "provenance": {
+        "sourceUrl": "https://www.pakrailways.gov.pk/home",
+        "sourceTitle": "RABTA public From station selector",
+        "retrievedAt": "2026-11-02T00:00:00+05:00",
+        "verifiedAt": "2026-11-02T00:00:00+05:00",
+        "verificationStatus": "verified",
+        "dataOrigin": "official-public",
+        "notes": "Displayed station name only verified on 2026-11-02. Timestamp uses date precision (midnight Asia/Karachi); no official station code, city, timetable or live availability inferred."
+      },
+      "fieldSources": {
+        "active": {
+          "sourceUrl": null,
+          "sourceTitle": "Local catalogue visibility decision",
+          "retrievedAt": "2026-11-02T00:00:00+05:00",
+          "verifiedAt": null,
+          "verificationStatus": "unverified",
+          "dataOrigin": "manually-entered",
+          "notes": "active controls local station-search visibility, not operational status."
+        }
+      },
+      "name": "MARGALA",
+      "city": null,
+      "aliases": [],
+      "active": true
+    },
+    {
+      "action": "inserted",
+      "id": "MUX",
+      "provenance": {
+        "sourceUrl": "https://www.pakrailways.gov.pk/home",
+        "sourceTitle": "RABTA public From station selector",
+        "retrievedAt": "2026-11-02T00:00:00+05:00",
+        "verifiedAt": "2026-11-02T00:00:00+05:00",
+        "verificationStatus": "verified",
+        "dataOrigin": "official-public",
+        "notes": "Displayed station name only verified on 2026-11-02. Timestamp uses date precision (midnight Asia/Karachi); no official station code, city, timetable or live availability inferred."
+      },
+      "fieldSources": {
+        "active": {
+          "sourceUrl": null,
+          "sourceTitle": "Local catalogue visibility decision",
+          "retrievedAt": "2026-11-02T00:00:00+05:00",
+          "verifiedAt": null,
+          "verificationStatus": "unverified",
+          "dataOrigin": "manually-entered",
+          "notes": "active controls local station-search visibility, not operational status."
+        }
+      },
+      "name": "MULTAN CANTT",
+      "city": null,
+      "aliases": [],
+      "active": true
+    },
+    {
+      "action": "inserted",
+      "id": "FSD",
+      "provenance": {
+        "sourceUrl": "https://www.pakrailways.gov.pk/home",
+        "sourceTitle": "RABTA public From station selector",
+        "retrievedAt": "2026-11-02T00:00:00+05:00",
+        "verifiedAt": "2026-11-02T00:00:00+05:00",
+        "verificationStatus": "verified",
+        "dataOrigin": "official-public",
+        "notes": "Displayed station name only verified on 2026-11-02. Timestamp uses date precision (midnight Asia/Karachi); no official station code, city, timetable or live availability inferred."
+      },
+      "fieldSources": {
+        "active": {
+          "sourceUrl": null,
+          "sourceTitle": "Local catalogue visibility decision",
+          "retrievedAt": "2026-11-02T00:00:00+05:00",
+          "verifiedAt": null,
+          "verificationStatus": "unverified",
+          "dataOrigin": "manually-entered",
+          "notes": "active controls local station-search visibility, not operational status."
+        }
+      },
+      "name": "FAISALABAD",
+      "city": null,
+      "aliases": [],
+      "active": true
+    }
+  ]
+}
+Import applied. Repeat imports preserve stable IDs; unchanged rows are not written.

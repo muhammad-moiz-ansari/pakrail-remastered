@@ -1,12 +1,6 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  Armchair,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
-import { destinations, homeAssets, officialLinks } from "@/lib/home-content";
+import { ArrowRight, Armchair, ShieldCheck, Users } from "lucide-react";
+import { destinations, homeAssets } from "@/lib/home-content";
 import BookingApp from "./booking-app";
 import HomePhoto from "./home-photo";
 import HomeExperience from "./home-experience";
@@ -121,37 +115,20 @@ export default function Homepage() {
             },
             {
               title: "Careers",
-              href: officialLinks.careers,
+              href: "/careers",
               asset: homeAssets.careers,
-              external: true,
+              external: false,
             },
           ].map((v) => (
-            <a
-              className="about-link"
-              key={v.title}
-              href={v.href}
-              {...(v.external
-                ? { target: "_blank", rel: "noopener noreferrer" }
-                : {})}
-            >
+            <Link className="about-link" key={v.title} href={v.href}>
               <span className="about-portrait">
                 <HomePhoto {...v.asset} sizes="220px" />
               </span>
               <span>
                 {v.title}
-                {v.external ? (
-                  <>
-                    <ArrowUpRight size={17} />
-                    <span className="sr-only">
-                      {" "}
-                      (official website, opens a new tab)
-                    </span>
-                  </>
-                ) : (
-                  <ArrowRight size={17} />
-                )}
+                <ArrowRight size={17} />
               </span>
-            </a>
+            </Link>
           ))}
         </div>
         <p className="image-caption">

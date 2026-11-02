@@ -131,9 +131,10 @@ export default async function Information({
               for travel.
             </p>
             <p>
-              No confirmation email is sent. Print summary opens the browser’s
-              print dialog so you can keep a copy. Start new booking asks before
-              clearing the current booking.
+              No confirmation email is sent. Print ticket opens the browser’s
+              print dialog with only a clearly labelled test ticket so you can
+              keep a copy. Start new booking asks before clearing the current
+              booking.
             </p>
           </section>
           <section className="information-block">

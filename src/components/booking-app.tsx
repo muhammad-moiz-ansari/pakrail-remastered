@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import SearchForm from "./search-form";
+import TicketPrint, { printTicketDocument } from "./ticket-print";
 import VerifiedSeatSelection, { CoachClassChoices } from "./coach-booking";
 import {
   customerDraft,
@@ -1688,6 +1689,7 @@ export default function BookingApp({ step }: { step: string }) {
         )}
         {index === 7 && b.status === "paid" && (
           <>
+            <TicketPrint booking={b} />
             <section className="confirmation-heading">
               <span className="confirmation-check">
                 <Check size={32} />
@@ -1769,9 +1771,21 @@ export default function BookingApp({ step }: { step: string }) {
                 <div className="action-row no-print">
                   <button
                     className="button secondary"
-                    onClick={() => window.print()}
+                    onClick={async () => {
+                      if (busyRef.current) return;
+                      busyRef.current = true;
+                      try {
+                        await printTicketDocument();
+                      } catch {
+                        setError(
+                          "Your ticket could not be prepared. Check the logo has loaded and try again.",
+                        );
+                      } finally {
+                        busyRef.current = false;
+                      }
+                    }}
                   >
-                    <Printer size={17} /> Print summary
+                    <Printer size={17} /> Print ticket
                   </button>
                   <button className="button primary" onClick={reset}>
                     Start new booking <ArrowRight size={17} />

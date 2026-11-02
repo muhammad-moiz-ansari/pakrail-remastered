@@ -1,17 +1,19 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Check, Info } from "lucide-react";
 import {
   coachLayouts,
   getLayout,
   layoutTitle,
+  previewFares,
+  sampleOccupancy,
+  currentSampleServiceId,
   type CoachOffer,
   type CoachPlace,
 } from "@/lib/coach-layouts";
 import {
   changeLeg,
-  chooseSeat,
+  assignPlace,
   classes,
   fare,
   money,
@@ -36,7 +38,8 @@ export function ReferenceLayoutBrowser() {
       <summary>Explore coach layouts</summary>
       <p className="fineprint">
         Compare reference arrangements. Available coaches depend on your chosen
-        service.
+        service. Preview prices are examples; your chosen journey’s fare may
+        differ.
       </p>
       <label>
         Coach layout
@@ -53,7 +56,12 @@ export function ReferenceLayoutBrowser() {
           ))}
         </select>
       </label>
-      <CoachMap key={id} layout={layout} />
+      <CoachMap
+        key={id}
+        layout={layout}
+        amount={previewFares[layout.id]}
+        state={(p) => sampleOccupancy(layout, p.id)}
+      />
     </details>
   );
 }
@@ -75,7 +83,7 @@ export function CoachClassChoices({
     } | null>(null),
     [error, setError] = useState(""),
     [retry, setRetry] = useState(0);
-  const service = `sample-${leg.train.id.split("-").at(-1)}`;
+  const service = currentSampleServiceId(leg.train.id);
   useEffect(() => {
     const controller = new AbortController();
     const query = new URLSearchParams({
@@ -143,14 +151,27 @@ export function CoachClassChoices({
           const active =
             leg.offer?.classId === offer.classId &&
             leg.offer?.mode === offer.mode;
-          const disabled = !offer.quote || capacity < booking.passengers.length;
+          const numbered = offer.coaches.every(
+            (c) =>
+              getLayout(c.layoutId, c.layoutVersion)?.verification ===
+              "numbered",
+          );
+          const disabled =
+            !offer.quote || !numbered || capacity < booking.passengers.length;
           return (
             <article
               className={`class-card ${active ? "selected" : ""}`}
               key={`${offer.classId}-${offer.mode}`}
             >
               <span className="class-icon">
-                <AccommodationIcon type={offer.mode} />
+                <AccommodationIcon
+                  type={
+                    getLayout(
+                      offer.coaches[0].layoutId,
+                      offer.coaches[0].layoutVersion,
+                    )!.places[0].type
+                  }
+                />
               </span>
               <h2>{c.name}</h2>
               <p>{c.description}</p>
@@ -190,6 +211,12 @@ export function CoachClassChoices({
                   </span>
                 )}
               </div>
+              {!numbered && (
+                <p className="fineprint">
+                  Sample price shown. Printed place numbers are needed before
+                  this coach can be reserved.
+                </p>
+              )}
               <button
                 className={`button full ${active ? "primary" : "secondary"}`}
                 disabled={disabled}
@@ -236,14 +263,10 @@ export default function VerifiedSeatSelection({
   onNotice: (message: string) => void;
 }) {
   const offer = leg.offer!;
-  const [coachNumber, setCoachNumber] = useState(offer.coaches[0].number),
-    [pid, setPid] = useState(booking.passengers[0].id);
+  const [coachNumber, setCoachNumber] = useState(offer.coaches[0].number);
   const coach =
-    offer.consist.find((c) => c.number === coachNumber) ?? offer.coaches[0];
-  const selectedClass = offer.coaches.some((c) => c.id === coach.id);
+    offer.coaches.find((c) => c.number === coachNumber) ?? offer.coaches[0];
   const layout = getLayout(coach.layoutId, coach.layoutVersion)!;
-  const active =
-    booking.passengers.find((p) => p.id === pid) ?? booking.passengers[0];
   const owner = (p: CoachPlace) =>
     booking.passengers.find((person) => {
       const s = booking.assignments[seatKey(leg.id, person.id)];
@@ -255,18 +278,13 @@ export default function VerifiedSeatSelection({
         <span className="eyebrow">YOUR GROUP</span>
         <h2>A place for everyone</h2>
         <p className="subtle">
-          Choose a traveller, then a place. Your green selection can be removed
-          by activating it again.
+          Choose a place on the map, then assign a passenger in its details.
+          Open a selected place to change or remove its assignment.
         </p>
         {booking.passengers.map((p, i) => {
           const s = booking.assignments[seatKey(leg.id, p.id)];
           return (
-            <button
-              key={p.id}
-              className={`passenger-seat ${active.id === p.id ? "active" : ""}`}
-              aria-pressed={active.id === p.id}
-              onClick={() => setPid(p.id)}
-            >
+            <div key={p.id} className="passenger-seat">
               <span className="number-badge">{i + 1}</span>
               <span>
                 <b>{p.name}</b>
@@ -277,7 +295,7 @@ export default function VerifiedSeatSelection({
                 </small>
               </span>
               {s && <Check size={17} />}
-            </button>
+            </div>
           );
         })}
         <p className="assignment-count" role="status">
@@ -317,7 +335,7 @@ export default function VerifiedSeatSelection({
           className="train-overview"
           aria-label="Sample train coach overview"
         >
-          {[...offer.consist]
+          {[...offer.coaches]
             .sort((a, b) => a.order - b.order)
             .map((c) => (
               <button
@@ -332,25 +350,26 @@ export default function VerifiedSeatSelection({
             ))}
         </nav>
         <p className="fineprint">
-          Configured sample train overview. Select a coach to inspect its
-          interior. No real train consist or live inventory is asserted.
+          Showing only {offer.className} coaches for your {leg.id} journey.
+          Select a coach to choose a place.
         </p>
-        {!selectedClass && (
-          <p className="coach-evidence-note">
-            Viewing another class; your existing choices are retained.{" "}
-            <Link href="/booking/classes">Change class to book this coach</Link>
-            .
-          </p>
-        )}
         <h3 className="coach-layout-name">{layoutTitle(layout)}</h3>
         <CoachMap
           key={`${leg.id}-${coach.id}`}
           layout={layout}
           coach={coach.number}
-          amount={selectedClass ? (offer.quote?.amount ?? null) : null}
-          selectingFor={selectedClass ? active.name : undefined}
+          amount={offer.quote?.amount ?? null}
+          passengers={booking.passengers.map((person) => {
+            const selected = booking.assignments[seatKey(leg.id, person.id)];
+            return {
+              id: person.id,
+              name: person.name,
+              assignment: selected
+                ? `Coach ${selected.coach} · ${seatLabel(selected)} · ${seatDescription(selected)}`
+                : undefined,
+            };
+          })}
           state={(p) => {
-            if (!selectedClass) return { state: "unknown" };
             const seat = seatForPlace(leg, coach.number, p.id),
               person = owner(p);
             return {
@@ -358,42 +377,33 @@ export default function VerifiedSeatSelection({
                 !seat || unavailable(booking, leg, seat)
                   ? "occupied"
                   : "available",
-              gender: "unspecified",
+              gender: sampleOccupancy(layout, p.id).gender,
               owner: person?.name,
-              mine: person?.id === active.id,
+              ownerId: person?.id,
             };
           }}
-          onSelect={
-            selectedClass
-              ? (p) => {
-                  const seat = seatForPlace(leg, coach.number, p.id);
-                  if (seat) {
-                    onChange(chooseSeat(booking, leg.id, active.id, seat));
-                    onNotice(
-                      `${p.label} · ${seatDescription(seat)} assigned to ${active.name} on the ${leg.id} leg.`,
-                    );
-                  }
-                }
-              : undefined
-          }
-          onRemove={
-            selectedClass
-              ? () => {
-                  onChange(removeSeat(booking, leg.id, active.id));
-                  onNotice(
-                    `${active.name}’s ${leg.id} place removed. Choose another place when ready.`,
-                  );
-                }
-              : undefined
-          }
+          onAssign={(p, pid) => {
+            const seat = seatForPlace(leg, coach.number, p.id),
+              person = booking.passengers.find((v) => v.id === pid);
+            if (seat && person) {
+              onChange(assignPlace(booking, leg.id, pid, seat));
+              onNotice(
+                `${p.label} assigned to ${person.name} on the ${leg.id} leg. Any previous assignment on this leg was released.`,
+              );
+            }
+          }}
+          onUnassign={(_, pid) => {
+            onChange(removeSeat(booking, leg.id, pid));
+            onNotice(`Place assignment removed on the ${leg.id} leg.`);
+          }}
         />
       </section>
       <div className="coach-selection-help">
         <Info size={18} />
         <p>
-          Availability is simulated and occupied places have unspecified gender.
-          Your passenger’s gender is retained with their details; it is never
-          used to guess another occupant’s gender.
+          Occupancy and prices are sample data. Male, female and unspecified
+          examples show the available styles; they do not represent actual
+          passengers.
         </p>
       </div>
     </div>

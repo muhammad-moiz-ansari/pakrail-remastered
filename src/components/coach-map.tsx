@@ -119,7 +119,7 @@ export function CoachLegends({ layout }: { layout: CoachLayout }) {
 }
 type PlaceState = Occupancy & {
   owner?: string;
-  mine?: boolean;
+  ownerId?: string;
   suggested?: boolean;
 };
 export default function CoachMap({
@@ -127,17 +127,17 @@ export default function CoachMap({
   coach = "Preview",
   amount = null,
   state = () => ({ state: "unknown" }),
-  onSelect,
-  onRemove,
-  selectingFor,
+  passengers = [],
+  onAssign,
+  onUnassign,
 }: {
   layout: CoachLayout;
   coach?: string;
   amount?: number | null;
   state?: (p: CoachPlace) => PlaceState;
-  onSelect?: (p: CoachPlace) => void;
-  onRemove?: (p: CoachPlace) => void;
-  selectingFor?: string;
+  passengers?: { id: string; name: string; assignment?: string }[];
+  onAssign?: (p: CoachPlace, pid: string) => void;
+  onUnassign?: (p: CoachPlace, pid: string) => void;
 }) {
   const [view, setView] = useState("map");
   const [detail, setDetail] = useState<CoachPlace | null>(null);
@@ -153,19 +153,17 @@ export default function CoachMap({
     setDetail(p);
     dialog.current?.showModal();
   };
-  const canSelect = (p: CoachPlace) =>
+  const canAssign = (p: CoachPlace) =>
     !!(
-      onSelect &&
+      onAssign &&
       amount !== null &&
       p.label &&
-      state(p).state === "available" &&
-      !state(p).owner
+      state(p).state === "available"
     );
   const status = (p: CoachPlace) => {
     const value = state(p);
-    if (value.mine)
-      return `Selected by you for ${value.owner}, activate to remove`;
-    if (value.owner) return `Selected by your group for ${value.owner}`;
+    if (value.owner)
+      return `Selected for ${value.owner}; activate to view or change the passenger`;
     if (value.state === "occupied")
       return `Occupied (${value.gender ?? "unspecified"})`;
     return value.state === "unknown"
@@ -189,14 +187,11 @@ export default function CoachMap({
         }
         data-place-id={p.id}
         data-side={p.x < 110 ? "left" : "right"}
-        data-tooltip={`${placeDescription(p)} · ${s.state === "occupied" ? `Occupied (${s.gender ?? "unspecified"})` : s.mine ? "Selected by you · activate to remove" : s.state === "unknown" ? "Availability not supplied" : "Available (sample)"}`}
+        data-tooltip={`${placeDescription(p)} · ${s.state === "occupied" ? `Occupied (${s.gender ?? "unspecified"})` : s.owner ? `Selected for ${s.owner} · view assignment` : s.state === "unknown" ? "Availability not supplied" : "Available (sample)"}`}
         aria-label={describe(p)}
         aria-pressed={!!s.owner}
         title={describe(p)}
-        onClick={(e) => {
-          if (s.mine && onRemove) onRemove(p);
-          else show(p, e.currentTarget);
-        }}
+        onClick={(e) => show(p, e.currentTarget)}
       >
         <b className="place-number">{p.label ?? "Unnumbered"}</b>
         <span className="place-art">
@@ -250,15 +245,24 @@ export default function CoachMap({
           aria-pressed={view === "list"}
           onClick={() => setView("list")}
         >
-          Accessible place list
+          Place list
         </button>
       </div>
       <p className="fineprint">
-        {selectingFor ? `Selecting for ${selectingFor}. ` : "Layout preview. "}
+        {onAssign
+          ? "Choose a place, then assign a passenger. "
+          : "Layout preview. "}
         Tap or focus a place for its type, tier and status.{" "}
         {amount !== null
           ? "Prices are full sample ticket fares; selection adds no surcharge."
           : "A valid quote is required before booking."}
+      </p>
+      <p className="fineprint">
+        {view === "list"
+          ? "Place list: the same places and details in a text layout, useful for keyboard navigation, screen readers and small screens."
+          : "Use Place list for a text alternative to the coach map."}{" "}
+        Occupied male/female examples are illustrative sample data, not actual
+        passenger information.
       </p>
       {view === "map" ? (
         <div
@@ -278,7 +282,7 @@ export default function CoachMap({
             >
               {layout.structures.map((s) => (
                 <div
-                  key={s.id}
+                  key={`${s.id}:${s.width}:${s.height}`}
                   className={`coach-structure structure-${s.type}`}
                   style={{
                     left: s.x,
@@ -386,19 +390,45 @@ export default function CoachMap({
                 ? "Sample fare, including place selection. No additional selection fee."
                 : "This reference is available for preview. Booking is unavailable without a valid numbered place and fare."}
             </p>
+            {canAssign(detail) && (
+              <fieldset className="place-passenger-choices">
+                <legend>Assign this place</legend>
+                <p>
+                  Choose a passenger. Their previous place on this leg will be
+                  released. Reassigning this place also releases its previous
+                  passenger.
+                </p>
+                {passengers.map((person) => (
+                  <label key={person.id}>
+                    <input
+                      type="radio"
+                      name="place-passenger"
+                      value={person.id}
+                      checked={state(detail).ownerId === person.id}
+                      onChange={() => onAssign?.(detail, person.id)}
+                    />
+                    <span>
+                      <b>{person.name}</b>
+                      <small>
+                        {person.assignment ?? "No place selected on this leg"}
+                      </small>
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+            )}
             <div className="action-row">
               <button className="button secondary" onClick={close}>
                 Close
               </button>
-              {canSelect(detail) && (
+              {state(detail).ownerId && onUnassign && (
                 <button
-                  className="button primary"
+                  className="button secondary"
                   onClick={() => {
-                    onSelect?.(detail);
-                    close();
+                    onUnassign(detail, state(detail).ownerId!);
                   }}
                 >
-                  Confirm place <Check size={17} />
+                  Remove assignment
                 </button>
               )}
             </div>

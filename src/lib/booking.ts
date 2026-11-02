@@ -1,7 +1,7 @@
 import {
   travelClasses,
   getLayout,
-  sampleCoachServices,
+  allCoachServices,
   serviceOffers,
   sampleOccupancy,
   placeDescription,
@@ -288,10 +288,10 @@ export function validOffer(l: Leg) {
     o.to !== l.train.to ||
     o.date !== l.train.date ||
     o.classId !== l.classId ||
-    o.serviceId !== `sample-${l.train.id.split("-").at(-1)}`
+    o.serviceId.replace(/-v2$/, "") !== `sample-${l.train.id.split("-").at(-1)}`
   )
     return false;
-  const service = sampleCoachServices.find((s) => s.id === o.serviceId);
+  const service = allCoachServices.find((s) => s.id === o.serviceId);
   if (!service) return false;
   const expected = serviceOffers(service, o.from, o.to, o.date).find(
     (v) => v.classId === o.classId && v.mode === o.mode,
@@ -505,6 +505,45 @@ export function chooseSeat(
       Object.entries(b.suggested).filter(([k]) => k !== seatKey(leg, pid)),
     ),
   };
+}
+/** Place-first assignment: moving a passenger or reassigning a group-owned place is atomic. */
+export function assignPlace(
+  b: Booking,
+  legId: string,
+  pid: string,
+  seat: Seat,
+): Booking {
+  const leg = b.legs.find((l) => l.id === legId);
+  if (
+    !leg ||
+    !b.passengers.some((p) => p.id === pid) ||
+    unavailable(b, leg, seat) ||
+    !legSeats(leg).some(
+      (s) => s.coach === seat.coach && s.number === seat.number,
+    )
+  )
+    return b;
+  const displaced = Object.entries(b.assignments)
+    .filter(
+      ([key, s]) =>
+        key.startsWith(`${legId}:`) &&
+        key !== seatKey(legId, pid) &&
+        s.coach === seat.coach &&
+        (s.place && seat.place
+          ? s.place.physicalId === seat.place.physicalId
+          : s.number === seat.number),
+    )
+    .map(([key]) => key);
+  const next = {
+    ...b,
+    assignments: Object.fromEntries(
+      Object.entries(b.assignments).filter(([key]) => !displaced.includes(key)),
+    ),
+    suggested: Object.fromEntries(
+      Object.entries(b.suggested).filter(([key]) => !displaced.includes(key)),
+    ),
+  };
+  return chooseSeat(next, legId, pid, seat);
 }
 export function updatePassengers(b: Booking, passengers: Passenger[]): Booking {
   const ids = new Set(passengers.map((p) => p.id));

@@ -3,6 +3,8 @@ import { isDeepStrictEqual } from "node:util";
 import type { Db } from "mongodb";
 import {
   coachLayouts,
+  allCoachLayouts,
+  allCoachServices,
   layoutSchema,
   reviewedAt,
   sampleCoachServices,
@@ -17,13 +19,13 @@ export const fingerprint = (value: unknown) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
 export function validateCoachCatalogue() {
   const keys = new Set();
-  for (const layout of coachLayouts) {
+  for (const layout of allCoachLayouts) {
     layoutSchema.parse(layout);
     const key = `${layout.id}:${layout.version}`;
     if (keys.has(key)) throw Error("Duplicate layout identity");
     keys.add(key);
   }
-  for (const service of sampleCoachServices) {
+  for (const service of allCoachServices) {
     serviceSchema.parse(service);
     if (
       new Set(service.coaches.map((c) => c.id)).size !== service.coaches.length
@@ -36,7 +38,7 @@ export function validateCoachCatalogue() {
       throw Error("Duplicate coach order");
     for (const coach of service.coaches)
       if (
-        !coachLayouts.some(
+        !allCoachLayouts.some(
           (l) =>
             l.id === coach.layoutId &&
             l.version === coach.layoutVersion &&
@@ -48,11 +50,13 @@ export function validateCoachCatalogue() {
   return {
     classes: travelClasses.length,
     templates: coachLayouts.length,
+    templateVersions: allCoachLayouts.length,
     numberedPlaces: coachLayouts
       .filter((l) => l.verification === "numbered")
       .reduce((n, l) => n + l.places.length, 0),
     unnumberedPositions: 56,
     sampleServices: sampleCoachServices.length,
+    sampleServiceVersions: allCoachServices.length,
     liveDepartures: 0,
   };
 }
@@ -105,12 +109,12 @@ export async function seedCoachCatalogue(db: Db, apply = false) {
       query: { id: record.id },
       record,
     })),
-    ...coachLayouts.map((record) => ({
+    ...allCoachLayouts.map((record) => ({
       collection: "coachLayoutTemplates",
       query: { id: record.id, version: record.version },
       record,
     })),
-    ...sampleCoachServices.map((record) => ({
+    ...allCoachServices.map((record) => ({
       collection: "demo_coachServices",
       query: { id: record.id },
       record,
@@ -217,7 +221,7 @@ export async function readCoachService(db: Db, id: string) {
       throw Error("Pinned class reference not available");
   }
   for (const coach of service.coaches) {
-    const expected = coachLayouts.find(
+    const expected = allCoachLayouts.find(
       (l) => l.id === coach.layoutId && l.version === coach.layoutVersion,
     );
     const stored = await db

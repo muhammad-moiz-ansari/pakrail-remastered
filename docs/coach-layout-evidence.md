@@ -1,5 +1,7 @@
 # Coach evidence and implementation register
 
+For the subsequent user corrections, current sample prices and v2 layouts, see [Coach selection fixes](coach-layout-fixes.md). The original inspection and first-release results below are retained as history.
+
 Reviewed locally and in the browser on 2026-11-02. The 19 supplied files under `references/Seat Arrangements/` are read-only evidence. All 14 images were visually inspected, and all five text files were read in full. The format-reference image supplies presentation order only: number, icon, price. Its fares, colours and icons are not imported.
 
 ## Source priority and conflicts

@@ -9,12 +9,15 @@ import {
   sampleCoachServices,
   sampleOccupancy,
   serviceOffers,
+  historicalCoachServices,
+  previewFares,
 } from "../src/lib/coach-layouts";
 import {
   addDays,
   allocationIsTogether,
   changeLeg,
   chooseSeat,
+  assignPlace,
   className,
   earliestStep,
   fare,
@@ -173,14 +176,17 @@ test("Cabin reference keeps offset C stack, 16 berths and six toilets; conflict 
   assert.equal(l.places.find((p) => p.label === "DU4")?.x, 330);
   assert.equal(l.structures.filter((s) => s.type === "toilet").length, 6);
   assert.equal(l.structures.filter((s) => s.type === "table").length, 6);
-  assert.match(l.warning!, /unresolved/);
+  assert.equal(l.version, 2);
+  assert.match(getLayout("cabin-16", 1)!.warning!, /unresolved/);
 });
 test("Parlour retains 14 rows of four rotating positions with no fabricated seat numbers", () => {
   const l = getLayout("parlour-56-unnumbered")!;
   assert.equal(l.verification, "partial");
   assert.equal(new Set(l.places.map((p) => p.y)).size, 14);
   assert.ok(
-    l.places.every((p) => p.label === null && p.rotatable && p.type === "seat"),
+    l.places.every(
+      (p) => p.label === null && p.rotatable && p.type === "recliner",
+    ),
   );
   const offer = serviceOffers(
     sampleCoachServices[2],
@@ -188,7 +194,8 @@ test("Parlour retains 14 rows of four rotating positions with no fabricated seat
     "RWP",
     addDays(today(), 1),
   ).find((o) => o.classId === "parlour")!;
-  assert.equal(offer.quote, null);
+  assert.equal(offer.quote?.amount, 9500);
+  assert.equal(offer.quote?.source, "approved-sample-fare");
 });
 test("class aliases normalize spelling and official codes without treating lower berth as a class", () => {
   assert.equal(canonicalClass("Parlor Car"), "parlour");
@@ -197,7 +204,7 @@ test("class aliases normalize spelling and official codes without treating lower
   assert.equal(canonicalClass("ACLZ"), "business");
   assert.equal(canonicalClass("Lower berth"), undefined);
 });
-test("pinned sample services have different consists and no invented Sleeper fare", () => {
+test("pinned sample services have different consists and approved sample Sleeper fare", () => {
   assert.equal(
     sampleCoachServices[0].coaches.some((c) => c.classId === "business"),
     false,
@@ -205,8 +212,8 @@ test("pinned sample services have different consists and no invented Sleeper far
   assert.equal(
     serviceOffers(sampleCoachServices[3], "LHE", "RWP", today()).find(
       (o) => o.classId === "sleeper",
-    )?.quote,
-    null,
+    )?.quote?.amount,
+    8900,
   );
   assert.ok(
     serviceOffers(sampleCoachServices[0], "UNKNOWN", "RWP", today()).every(
@@ -214,6 +221,122 @@ test("pinned sample services have different consists and no invented Sleeper far
     ),
   );
   assert.equal(money(NaN), "Fare unavailable");
+});
+test("Sleeper v2 separates toilets into the correct cabins with stepped walls and clear berth margins", () => {
+  const layout = getLayout("cabin-16")!;
+  const walls = layout.structures.filter((s) => s.type === "wall");
+  for (const p of layout.places)
+    for (const wall of walls)
+      assert.equal(
+        p.x < wall.x + wall.width &&
+          p.x + p.width > wall.x &&
+          p.y < wall.y + wall.height &&
+          p.y + p.height > wall.y,
+        false,
+        `${p.label} overlaps ${wall.label}`,
+      );
+  const toilets = layout.structures.filter((s) => s.type === "toilet");
+  for (const letter of ["A", "E"]) {
+    const toilet = toilets.find((s) => s.label === `Toilet ${letter}-Cabin`)!;
+    assert.ok(
+      walls.some(
+        (w) => w.label.includes("left") && w.y > toilet.y + toilet.height,
+      ),
+    );
+  }
+  const d = toilets.find((s) => s.label === "Toilet D-Cabin")!;
+  assert.ok(
+    walls.some((w) => w.label.includes("left") && w.y < d.y && d.y - w.y < 10),
+  );
+  assert.equal(walls.filter((w) => w.label.includes("riser")).length, 3);
+  assert.ok(
+    layout.places.find((p) => p.label === "CU2")!.y >
+      getLayout("cabin-16", 1)!.places.find((p) => p.label === "CU2")!.y,
+  );
+});
+test("place-first assignment moves the passenger, releases a previous owner and preserves the other leg", () => {
+  let b = recommend(configured(true));
+  const target = b.assignments["outbound:p1"],
+    previous = b.assignments["outbound:p0"],
+    returned = b.assignments["return:p0"];
+  b = assignPlace(b, "outbound", "p0", target);
+  assert.deepEqual(b.assignments["outbound:p0"], target);
+  assert.equal(b.assignments["outbound:p1"], undefined);
+  assert.deepEqual(b.assignments["return:p0"], returned);
+  assert.equal(
+    Object.values(b.assignments).filter(
+      (s) =>
+        s.coach === previous.coach &&
+        s.place?.physicalId === previous.place?.physicalId,
+    ).length,
+    0,
+  );
+  assert.equal(seatsComplete(b), false);
+  b = assignPlace(b, "outbound", "p1", previous);
+  assert.ok(seatsComplete(b));
+});
+test("place-first assignment rejects unavailable or forged targets without removing existing assignments", () => {
+  const b = recommend(configured()),
+    leg = b.legs[0],
+    layout = getLayout(leg.offer!.coaches[0].layoutId)!;
+  const occupied = layout.places.find(
+    (p) => sampleOccupancy(layout, p.id).state === "occupied",
+  )!;
+  assert.strictEqual(
+    assignPlace(b, leg.id, "p0", seatForPlace(leg, "A", occupied.id)!),
+    b,
+  );
+  const target = {
+    ...b.assignments["outbound:p1"],
+    place: { ...b.assignments["outbound:p1"].place!, label: "invalid" },
+  };
+  assert.strictEqual(assignPlace(b, leg.id, "p0", target), b);
+});
+test("sample preview prices cover every layout and Sleeper quote is charged once", () => {
+  for (const layout of coachLayouts) assert.ok(previewFares[layout.id] > 0);
+  const b = configured(),
+    train = trains(b.search)[3];
+  b.legs = [
+    {
+      id: "outbound",
+      train,
+      classId: "sleeper",
+      offer: serviceOffers(
+        sampleCoachServices[3],
+        train.from,
+        train.to,
+        train.date,
+      ).find((o) => o.classId === "sleeper"),
+    },
+  ];
+  const selected = recommend(b);
+  assert.equal(earliestStep(selected), 6);
+  assert.equal(pricing(selected).total, 8900 * 3);
+  assert.ok(
+    Object.values(selected.assignments).every(
+      (s) => s.place?.layoutVersion === 2,
+    ),
+  );
+});
+test("historical services and layout versions remain restorable after current configurations change", () => {
+  const b = configured(),
+    train = b.legs[0].train;
+  b.legs[0].offer = serviceOffers(
+    historicalCoachServices[1],
+    train.from,
+    train.to,
+    train.date,
+  )[0];
+  const old = recommend(b);
+  old.status = "paid";
+  old.reference = "DFY-1234ABCD";
+  assert.deepEqual(restore(JSON.stringify(old)), old);
+  assert.equal(old.legs[0].offer!.serviceId, "sample-1");
+  assert.equal(getLayout("parlour-56-unnumbered", 1)!.places[0].type, "seat");
+  assert.equal(
+    getLayout("parlour-56-unnumbered", 2)!.places[0].type,
+    "recliner",
+  );
 });
 test("recommendations use explicit bays/tiers; unique assignments work on both legs without fare duplication", () => {
   const b = recommend(configured(true));
@@ -298,9 +421,14 @@ test("minimal occupancy categories never infer binary gender and reference paylo
   ])
     assert.equal(occupancyCategory(v), "unspecified");
   assert.equal(occupancyCategory("female"), "female");
-  for (const layout of coachLayouts)
-    for (const p of layout.places)
-      assert.notEqual(sampleOccupancy(layout, p.id).gender, "male");
+  for (const layout of coachLayouts) {
+    const genders = new Set(
+      layout.places
+        .map((p) => sampleOccupancy(layout, p.id).gender)
+        .filter(Boolean),
+    );
+    assert.deepEqual(genders, new Set(["male", "female", "unspecified"]));
+  }
   assert.doesNotMatch(
     JSON.stringify(
       serviceOffers(sampleCoachServices[0], "LHE", "RWP", today()),

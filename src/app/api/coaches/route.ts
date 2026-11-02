@@ -1,6 +1,6 @@
 import { database } from "@/server/db/mongodb";
 import { readCoachService } from "@/server/coach-store";
-import { sampleCoachServices, serviceOffers } from "@/lib/coach-layouts";
+import { allCoachServices, serviceOffers } from "@/lib/coach-layouts";
 import { validDate } from "@/lib/booking";
 
 export const runtime = "nodejs";
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     date = params.get("date") ?? "";
   const headers = { "Cache-Control": "no-store" };
   if (
-    !/^sample-[0-3]$/.test(id) ||
+    !/^sample-[0-3](?:-v2)?$/.test(id) ||
     !/^[\w.-]{1,80}$/.test(from) ||
     !/^[\w.-]{1,80}$/.test(to) ||
     from === to ||
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     );
   } catch {
     // The offline sample is an explicit development boundary, never live inventory.
-    const service = sampleCoachServices.find((s) => s.id === id)!;
+    const service = allCoachServices.find((s) => s.id === id)!;
     return Response.json(
       {
         source: "local-reference-fallback",

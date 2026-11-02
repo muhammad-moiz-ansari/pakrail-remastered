@@ -457,16 +457,136 @@ function parlour(): CoachLayout {
     structures: [structure("aisle", "Aisle", 205, 0, 115, 1610)],
   };
 }
+function correctedSleeper(): CoachLayout {
+  const places: CoachPlace[] = [],
+    structures: CoachStructure[] = [];
+  let y = 0;
+  for (const [i, letter] of ["A", "B", "C", "D", "E", "F"].entries()) {
+    const double = letter === "C" || letter === "D";
+    const firstY = y + (["A", "B", "F"].includes(letter) ? 65 : 18);
+    for (const [col, tier] of ["upper", "lower"].entries())
+      places.push(
+        place(
+          `${letter}${col === 0 ? "U2" : "L1"}`,
+          330 + col * 92,
+          firstY,
+          `Cabin ${letter}`,
+          "berth",
+          { tier: tier as "upper" | "lower", stack: `${letter}-1` },
+        ),
+      );
+    structures.push(
+      structure(
+        "table",
+        "Table",
+        445,
+        y + (double || letter === "E" ? 130 : 15),
+        70,
+        20,
+      ),
+    );
+    if (double)
+      for (const [col, tier] of ["upper", "lower"].entries())
+        places.push(
+          place(
+            `${letter}${col === 0 ? "U4" : "L3"}`,
+            (letter === "C" ? 115 : 330) + col * 92,
+            y + 170,
+            `Cabin ${letter}`,
+            "berth",
+            { tier: tier as "upper" | "lower", stack: `${letter}-2` },
+          ),
+        );
+    const height = double ? 295 : 195;
+    structures.push(structure("wall", "Cabin boundary", 108, y, 4, height - 8));
+    y += height;
+    if ([0, 2, 4].includes(i)) {
+      const names = i === 0 ? ["A", "B"] : i === 2 ? ["D", "C"] : ["E", "F"];
+      const upperOnLeft = i !== 2;
+      structures.push(
+        structure("toilet", `Toilet ${names[0]}-Cabin`, 112, y + 6, 182, 40),
+        structure("toilet", `Toilet ${names[1]}-Cabin`, 300, y + 6, 220, 40),
+      );
+      structures.push(
+        structure(
+          "wall",
+          "Stepped cabin wall · left",
+          110,
+          y + (upperOnLeft ? 52 : 0),
+          186,
+          4,
+        ),
+        structure("wall", "Stepped cabin wall · riser", 296, y, 4, 56),
+        structure(
+          "wall",
+          "Stepped cabin wall · right",
+          296,
+          y + (upperOnLeft ? 0 : 52),
+          224,
+          4,
+        ),
+      );
+      y += 60;
+    } else if (i < 5) {
+      structures.push(structure("wall", "Cabin wall", 110, y, 410, 4));
+      y += 8;
+    }
+  }
+  structures.unshift(structure("aisle", "Corridor", 5, 0, 95, y));
+  return {
+    id: "cabin-16",
+    version: 2,
+    classId: "sleeper",
+    name: "AC Sleeper · 16-berth cabins A–F",
+    mode: "berth",
+    inventoryFamily: "cabin16",
+    width: 525,
+    height: y,
+    verification: "numbered",
+    reviewedAt,
+    sources: [
+      ...source("5. AC Sleeper", ["1.png", "seat description.txt"]),
+      "User annotated Sleeper wall and alignment correction · 2026-11-02",
+    ],
+    places,
+    structures,
+  };
+}
+function correctedParlour(): CoachLayout {
+  const old = parlour();
+  return {
+    ...old,
+    version: 2,
+    name: "AC Parlour · 14 rows of rotatable recliners",
+    warning:
+      "Printed seat numbers have not been supplied. Sample prices are shown; numbered reservations remain unavailable for this layout.",
+    sources: [
+      ...old.sources,
+      "User confirmed premium recliners and rotation for all current Parlour coaches · 2026-11-02",
+    ],
+    places: old.places.map((p) => ({
+      ...p,
+      type: "recliner",
+      rotatable: true,
+    })),
+  };
+}
+export const historicalCoachLayouts: CoachLayout[] = [sleeper(), parlour()].map(
+  (v) => layoutSchema.parse(v),
+);
 export const coachLayouts: CoachLayout[] = [
   economy("seat"),
   economy("berth"),
   standard(),
   business(),
-  sleeper(),
-  parlour(),
+  correctedSleeper(),
+  correctedParlour(),
 ].map((v) => layoutSchema.parse(v));
-export const getLayout = (id: string, version = 1) =>
-  coachLayouts.find((v) => v.id === id && v.version === version);
+export const allCoachLayouts = [...coachLayouts, ...historicalCoachLayouts];
+export const getLayout = (id: string, version?: number) =>
+  allCoachLayouts.find(
+    (v) => v.id === id && (version === undefined || v.version === version),
+  );
 export const layoutTitle = (layout: CoachLayout) =>
   layout.name
     .replace("supplied ", "")
@@ -491,14 +611,16 @@ export const serviceSchema = z.strictObject({
   coaches: z.array(coachInstanceSchema),
   // These are the existing prototype's fare rules, not imported railway fares.
   fareMultipliers: z.record(z.string(), z.number().positive()),
+  classFares: z.record(z.string(), z.number().positive()).optional(),
 });
 export type CoachService = z.infer<typeof serviceSchema>;
 function configuredCoach(
   number: string,
   order: number,
   layoutId: string,
+  version = 1,
 ): CoachInstance {
-  const layout = getLayout(layoutId)!;
+  const layout = getLayout(layoutId, version)!;
   return {
     id: `coach-${number}`,
     number,
@@ -508,7 +630,7 @@ function configuredCoach(
     layoutVersion: layout.version,
   };
 }
-export const sampleCoachServices: CoachService[] = [
+export const historicalCoachServices: CoachService[] = [
   {
     id: "sample-0",
     name: "Mehran Explorer",
@@ -555,6 +677,35 @@ export const sampleCoachServices: CoachService[] = [
     fareMultipliers: { economy: 1 },
   },
 ];
+export const sampleCoachServices: CoachService[] = historicalCoachServices.map(
+  (service): CoachService => ({
+    ...service,
+    id: `${service.id}-v2`,
+    coaches: service.coaches.map((coach) => ({
+      ...coach,
+      layoutVersion: getLayout(coach.layoutId)!.version,
+    })),
+    ...(service.id === "sample-2"
+      ? { classFares: { parlour: 9500 } }
+      : service.id === "sample-3"
+        ? { classFares: { sleeper: 8900 } }
+        : {}),
+  }),
+);
+export const allCoachServices = [
+  ...sampleCoachServices,
+  ...historicalCoachServices,
+];
+export const currentSampleServiceId = (trainId: string) =>
+  `sample-${trainId.split("-").at(-1)}-v2`;
+export const previewFares: Record<string, number> = {
+  "economy-seat-78": 4350,
+  "economy-berth-78": 4250,
+  "ac-standard-72": 11150,
+  "ac-business-54": 6250,
+  "cabin-16": 8900,
+  "parlour-56-unnumbered": 9500,
+};
 export type Occupancy = {
   state: "available" | "occupied" | "unknown";
   gender?: "male" | "female" | "unspecified";
@@ -562,14 +713,22 @@ export type Occupancy = {
 export function occupancyCategory(value: unknown): Occupancy["gender"] {
   return value === "male" || value === "female" ? value : "unspecified";
 }
-// No authorized live occupancy source exists. Sample unavailability is neutral.
+// Explicitly illustrative categories requested for preview, never actual occupants.
 export function sampleOccupancy(
   layout: CoachLayout,
   placeId: string,
 ): Occupancy {
   const index = layout.places.findIndex((p) => p.id === placeId);
   return [4, 7, 12, 18].includes(index)
-    ? { state: "occupied", gender: "unspecified" }
+    ? {
+        state: "occupied",
+        gender:
+          index === 4 || index === 18
+            ? "male"
+            : index === 7
+              ? "female"
+              : "unspecified",
+      }
     : { state: "available" };
 }
 export type CoachOffer = {
@@ -586,7 +745,7 @@ export type CoachOffer = {
   quote: {
     amount: number;
     currency: "PKR";
-    source: "existing-sample-fare";
+    source: "existing-sample-fare" | "approved-sample-fare";
     passengerCategories: ["adult", "child"];
     selectionSurcharge: 0;
   } | null;
@@ -606,7 +765,7 @@ export const offerSchema = z.strictObject({
     .strictObject({
       amount: z.number().positive(),
       currency: z.literal("PKR"),
-      source: z.literal("existing-sample-fare"),
+      source: z.enum(["existing-sample-fare", "approved-sample-fare"]),
       passengerCategories: z.tuple([z.literal("adult"), z.literal("child")]),
       selectionSurcharge: z.literal(0),
     })
@@ -621,7 +780,9 @@ export function serviceOffers(
 ): CoachOffer[] {
   return [
     ...new Set(
-      service.coaches.map((c) => `${c.classId}:${getLayout(c.layoutId)!.mode}`),
+      service.coaches.map(
+        (c) => `${c.classId}:${getLayout(c.layoutId, c.layoutVersion)!.mode}`,
+      ),
     ),
   ].map((key) => {
     const [classId, mode] = key.split(":") as [string, "seat" | "berth"];
@@ -634,12 +795,7 @@ export function serviceOffers(
       railwayStationIds.includes(from) &&
       railwayStationIds.includes(to) &&
       from !== to &&
-      service.fareMultipliers[classId] &&
-      coaches.every(
-        (c) =>
-          getLayout(c.layoutId)?.verification === "numbered" &&
-          c.layoutId !== "cabin-16",
-      );
+      (service.classFares?.[classId] || service.fareMultipliers[classId]);
     return {
       serviceId: service.id,
       origin: "sample",
@@ -654,12 +810,14 @@ export function serviceOffers(
       quote: quotable
         ? {
             amount: Math.round(
-              service.baseFare *
-                service.fareMultipliers[classId] *
+              (service.classFares?.[classId] ??
+                service.baseFare * service.fareMultipliers[classId]) *
                 ([from, to].includes("KHI") ? 2 : 1),
             ),
             currency: "PKR",
-            source: "existing-sample-fare",
+            source: service.classFares?.[classId]
+              ? "approved-sample-fare"
+              : "existing-sample-fare",
             passengerCategories: ["adult", "child"],
             selectionSurcharge: 0,
           }

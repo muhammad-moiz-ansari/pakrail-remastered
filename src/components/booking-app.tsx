@@ -21,6 +21,9 @@ import {
   X,
 } from "lucide-react";
 import SearchForm from "./search-form";
+import Link from "next/link";
+import { authClient } from "@/lib/auth-client";
+import { draftRequest, DraftRequestError } from "@/lib/draft-client";
 import TicketPrint, { printTicketDocument } from "./ticket-print";
 import VerifiedSeatSelection, { CoachClassChoices } from "./coach-booking";
 import {
@@ -84,11 +87,21 @@ const labels = [
 ];
 const href = (n: number) => (n === 0 ? "/" : `/booking/${steps[n]}`);
 const key = "designify-draft-v1";
-export default function BookingApp({ step }: { step: string }) {
+export default function BookingApp({
+  step,
+  initialBooking,
+}: {
+  step: string;
+  initialBooking?: Booking;
+}) {
   const router = useRouter();
+  const { data: accountSession } = authClient.useSession();
   const index = steps.indexOf(step);
   const [b, setB] = useState<Booking | null>(null);
   const [notice, setNotice] = useState("");
+  const [checkoutError, setCheckoutError] = useState("");
+  const [holdExpiresAt, setHoldExpiresAt] = useState<string | null>(null);
+  const [holdRemaining, setHoldRemaining] = useState(0);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -120,6 +133,7 @@ export default function BookingApp({ step }: { step: string }) {
       sessionStorage.removeItem("designify-recovery");
       const raw = sessionStorage.getItem(key);
       if (raw) next = restore(raw);
+      if (initialBooking) next = initialBooking;
       next = customerDraft(next);
       if (next.recoveryNotice) message = next.recoveryNotice;
       if (
@@ -181,7 +195,7 @@ export default function BookingApp({ step }: { step: string }) {
       setActivePid(next.passengers[0]?.id ?? "");
       setVoucher(next.voucher);
     });
-  }, [step]);
+  }, [step, initialBooking]);
   useEffect(() => {
     if (b) {
       try {
@@ -195,6 +209,60 @@ export default function BookingApp({ step }: { step: string }) {
       }
     }
   }, [b]);
+  useEffect(() => {
+    if (!b || b.status !== "draft" || index === 6) return;
+    const timer = setTimeout(() => {
+      void draftRequest("save", { snapshot: b }).catch(() => {});
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [b, index]);
+  useEffect(() => {
+    if (index !== 6) return;
+    let active = true;
+    const check = async () => {
+      try {
+        const row = await draftRequest("checkout");
+        if (active && row) setHoldExpiresAt(row.holdExpiresAt);
+      } catch (e) {
+        if (active) {
+          setCheckoutError(
+            e instanceof Error ? e.message : "Your places need checking again.",
+          );
+          router.replace(
+            e instanceof DraftRequestError && e.status === 401
+              ? "/login?returnTo=/booking/payment"
+              : "/booking/review?checkout=review",
+          );
+        }
+      }
+    };
+    void check();
+    const focus = () => void check();
+    window.addEventListener("focus", focus);
+    const interval = setInterval(focus, 30000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+      window.removeEventListener("focus", focus);
+    };
+  }, [index, router]);
+  useEffect(() => {
+    if (!holdExpiresAt) return;
+    const tick = () =>
+      setHoldRemaining(
+        Math.max(
+          0,
+          Math.ceil((new Date(holdExpiresAt).getTime() - Date.now()) / 1000),
+        ),
+      );
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [holdExpiresAt]);
+  useEffect(() => {
+    if (index === 7 && b?.accountBookingId)
+      router.replace(`/account/bookings/${b.accountBookingId}`);
+  }, [index, b?.accountBookingId, router]);
   useEffect(() => {
     if (!b || guardedStep.current === step) return;
     guardedStep.current = step;
@@ -304,6 +372,10 @@ export default function BookingApp({ step }: { step: string }) {
       }
       next = updatePassengers(next, ps);
     }
+    // Searching starts a separate draft capability; completed or other-account
+    // drafts remain stored and are never overwritten or attached by email.
+    await draftRequest("detach").catch(() => {});
+    delete next.accountBookingId;
     save(next);
     await new Promise((r) => setTimeout(r, 650));
     setBusy(false);
@@ -401,34 +473,61 @@ export default function BookingApp({ step }: { step: string }) {
     }
     go(5);
   };
-  const pay = async () => {
-    if (!b || paymentRef.current || b.status === "paid") return;
-    if (earliestStep(b) < 6) {
-      go(earliestStep(b));
-      return;
+  const beginCheckout = async (
+    renew = false,
+    authMode: "login" | "signup" = "login",
+  ) => {
+    if (!b || busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
+    setError("");
+    setCheckoutError("");
+    try {
+      await draftRequest("save", { snapshot: b });
+      const prepared = await draftRequest("prepare", { renew });
+      setHoldExpiresAt(prepared?.holdExpiresAt ?? null);
+      const { data: session } = await authClient.getSession();
+      if (!session) {
+        router.push(`/${authMode}?returnTo=/booking/payment`);
+        return;
+      }
+      await draftRequest("claim");
+      await draftRequest("checkout");
+      go(6);
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Your saved booking service is unavailable.",
+      );
+      setCheckoutError(e instanceof DraftRequestError ? e.code : "");
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
     }
+  };
+  const pay = async () => {
+    if (!b || paymentRef.current) return;
     paymentRef.current = true;
     setBusy(true);
     setError("");
-    await new Promise((r) => setTimeout(r, 1200));
-    if (b.scenario === "payment-failure") {
-      save({ ...b, scenario: "normal" });
+    try {
+      const result = await draftRequest("complete-simulation");
+      if (!result) throw Error("Your booking could not be completed.");
+      save(result.snapshot);
+      router.push(`/account/bookings/${result.id}`);
+    } catch (e) {
       setError(
-        "The test payment could not be completed. No money was charged. Your booking details are saved; retry when ready.",
+        e instanceof Error
+          ? e.message
+          : "Test completion failed. No money was charged.",
       );
-      setBusy(false);
+      if (e instanceof DraftRequestError && e.status === 401)
+        router.push("/login?returnTo=/booking/payment");
+    } finally {
       paymentRef.current = false;
-      return;
+      setBusy(false);
     }
-    const next = {
-      ...b,
-      status: "paid" as const,
-      reference:
-        b.reference || `DFY-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
-    };
-    save(next);
-    setBusy(false);
-    router.push(href(7));
   };
   const reset = () => {
     if (
@@ -436,6 +535,7 @@ export default function BookingApp({ step }: { step: string }) {
         "Start a new booking? This will clear the current booking.",
       )
     ) {
+      void draftRequest("detach").catch(() => {});
       save(freshBooking());
       router.push("/");
     }
@@ -486,7 +586,7 @@ export default function BookingApp({ step }: { step: string }) {
         )}
       </div>
     );
-  if (!b)
+  if (!b || (index === 7 && b.accountBookingId))
     return (
       <div className="loading-shell">
         <TrainFront size={36} />
@@ -1623,6 +1723,17 @@ export default function BookingApp({ step }: { step: string }) {
                     <LockKeyhole size={25} />
                   </span>
                   <h2>Test payment</h2>
+                  <p role="status">
+                    Place hold: {Math.floor(holdRemaining / 60)}:
+                    {String(holdRemaining % 60).padStart(2, "0")} remaining.
+                    Signing in does not extend it.
+                  </p>
+                  {holdExpiresAt && holdRemaining === 0 && (
+                    <p className="error-text">
+                      Your hold expired. Return to review to check your places
+                      again.
+                    </p>
+                  )}
                   <p>
                     No money will be charged. No card or bank details are
                     needed.
@@ -1638,6 +1749,47 @@ export default function BookingApp({ step }: { step: string }) {
                   </small>
                 </article>
               )}
+              {index === 5 && (
+                <div className="checkout-notice">
+                  <p>
+                    {accountSession
+                      ? "You are signed in. Your saved journey will be checked before payment."
+                      : "Log in or create an account before payment. Your journey and traveller details stay saved."}{" "}
+                    Places are held for ten minutes when you continue.
+                  </p>
+                  <p>
+                    <Link
+                      href="/login?returnTo=/booking/payment"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        void beginCheckout();
+                      }}
+                    >
+                      Log in
+                    </Link>{" "}
+                    ·{" "}
+                    <Link
+                      href="/signup?returnTo=/booking/payment"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        void beginCheckout(false, "signup");
+                      }}
+                    >
+                      Create account
+                    </Link>
+                  </p>
+                  {checkoutError === "HOLD_EXPIRED" && (
+                    <button
+                      className="button secondary"
+                      disabled={busy}
+                      onClick={() => void beginCheckout(true)}
+                    >
+                      Check my places again
+                    </button>
+                  )}
+                  <Link href="/booking/seats">Review or change places</Link>
+                </div>
+              )}
               <div className="action-row">
                 <button className="text-button" onClick={() => go(index - 1)}>
                   <ArrowLeft size={16} /> Back
@@ -1652,7 +1804,7 @@ export default function BookingApp({ step }: { step: string }) {
                             go(earliestStep(b));
                             return;
                           }
-                          go(6);
+                          void beginCheckout();
                         }
                       : pay
                   }

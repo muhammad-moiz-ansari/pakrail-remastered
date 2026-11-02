@@ -14,10 +14,14 @@
     "db:indexes": "tsx scripts/catalogue.ts indexes",
     "catalogue:import": "tsx scripts/catalogue.ts import",
     "careers:import": "tsx scripts/careers.ts",
-    "coaches:seed": "tsx scripts/coaches.ts"
+    "coaches:seed": "tsx scripts/coaches.ts",
+    "auth:mail": "tsx scripts/auth-mail.ts",
+    "accounts:check": "tsx scripts/check-accounts.ts --run"
   },
   "dependencies": {
+    "@better-auth/mongo-adapter": "1.7.15",
     "@next/env": "^16.4.3",
+    "better-auth": "1.7.15",
     "cheerio": "^1.2.0",
     "csv-parse": "^7.0.3",
     "lucide-react": "^0.468.0",

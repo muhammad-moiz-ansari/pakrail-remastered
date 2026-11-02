@@ -1,5 +1,9 @@
 import BookingApp from "@/components/booking-app";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { headers, cookies } from "next/headers";
+import { sessionFor } from "@/server/auth";
+import { draftStore, draftCookie } from "@/server/booking-drafts";
+
 export async function generateMetadata({
   params,
 }: {
@@ -16,17 +20,6 @@ export async function generateMetadata({
     confirmation: "Booking confirmation",
   };
   return { title: `${titles[step] ?? "Booking"} | Pakistan Railways` };
-}
-export function generateStaticParams() {
-  return [
-    "trains",
-    "classes",
-    "passengers",
-    "seats",
-    "review",
-    "payment",
-    "confirmation",
-  ].map((step) => ({ step }));
 }
 export default async function Page({
   params,
@@ -46,5 +39,19 @@ export default async function Page({
     ].includes(step)
   )
     notFound();
+  if (step === "payment") {
+    const session = await sessionFor(await headers());
+    if (!session) redirect("/login?returnTo=/booking/payment");
+    let snapshot;
+    try {
+      const row = await (
+        await draftStore()
+      ).checkout((await cookies()).get(draftCookie)?.value, session.user.id);
+      snapshot = row.snapshot;
+    } catch {
+      redirect("/booking/review?checkout=review");
+    }
+    return <BookingApp step={step} initialBooking={snapshot} />;
+  }
   return <BookingApp step={step} />;
 }

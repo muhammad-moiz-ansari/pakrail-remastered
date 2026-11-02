@@ -48,6 +48,21 @@ export function breadcrumbsForPath(pathname: string): BreadcrumbItem[] {
   const normalized = pathname === "/" ? pathname : pathname.replace(/\/$/, "");
   if (normalized === "/careers")
     return [home, ancestors.about, { label: "Careers" }];
+  if (normalized === "/account") return [home, { label: "My account" }];
+  if (/^\/account\/bookings\/[a-f0-9-]{36}$/.test(normalized))
+    return [
+      home,
+      { label: "My account", href: "/account" },
+      { label: "Your ticket" },
+    ];
+  const accountLabels: Record<string, string> = {
+    "/login": "Log in",
+    "/signup": "Create account",
+    "/forgot-password": "Password recovery",
+    "/reset-password": "Reset password",
+  };
+  if (accountLabels[normalized])
+    return [home, { label: accountLabels[normalized] }];
   const topic = normalized.split("/")[2];
   if (normalized === `/information/${topic}` && isInformationTopic(topic)) {
     const page = informationPages[topic];

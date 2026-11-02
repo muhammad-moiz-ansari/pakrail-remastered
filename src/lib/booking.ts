@@ -156,6 +156,7 @@ export type Scenario =
   "normal" | "empty" | "search-error" | "seat-conflict" | "payment-failure";
 export type Booking = {
   version: 1;
+  accountBookingId?: string;
   search: Search;
   legs: Leg[];
   passengers: Passenger[];
@@ -674,6 +675,8 @@ export function restore(raw: string): Booking {
   const b = value as Booking;
   if (
     b.version !== 1 ||
+    (b.accountBookingId !== undefined &&
+      !/^[a-f0-9-]{36}$/.test(b.accountBookingId)) ||
     !b.search ||
     !Array.isArray(b.passengers) ||
     !Array.isArray(b.legs) ||

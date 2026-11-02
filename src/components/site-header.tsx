@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { ArrowRight, Menu, X } from "lucide-react";
+import AccountAccess from "./account-access";
 import { focusBooking } from "./booking-navigation";
 const navigation = [
   { id: "destinations", label: "Destinations", href: "/#destinations" },
@@ -63,6 +64,7 @@ export default function SiteHeader() {
               </Link>
             ))}
           </nav>
+          <AccountAccess />
           <button className="header-book" onClick={book}>
             Book a journey <ArrowRight size={16} />
           </button>
@@ -113,6 +115,7 @@ export default function SiteHeader() {
             </Link>
           ))}
         </nav>
+        <AccountAccess onNavigate={() => menu.current?.close()} />
         <button className="button primary full" onClick={book}>
           Book a journey <ArrowRight size={17} />
         </button>

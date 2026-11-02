@@ -1,0 +1,116 @@
+.account-main {
+  width: min(100% - 32px, 1000px);
+  margin: 48px auto 80px;
+  min-height: 60vh;
+}
+.account-main h1 {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(30px, 5vw, 44px);
+  color: var(--brand-deep);
+  margin-bottom: 16px;
+}
+.account-main p {
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+.account-form {
+  max-width: 520px;
+  margin: auto;
+}
+.account-form form {
+  display: grid;
+  gap: 16px;
+  margin: 24px 0;
+}
+.account-form label {
+  display: grid;
+  gap: 8px;
+  font-weight: 600;
+}
+.account-form .input {
+  width: 100%;
+  min-height: 48px;
+}
+.account-form a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.account-form .password-toggle {
+  justify-self: start;
+  min-height: 44px;
+}
+.account-back {
+  display: block;
+  margin-top: 24px;
+}
+.account-message {
+  border: 1px solid var(--border);
+  padding: 12px;
+}
+.account-access {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+  flex-shrink: 0;
+  color: #fff;
+}
+.account-access a,
+.account-access button {
+  color: inherit;
+  white-space: nowrap;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.account-access span {
+  font-size: 12px;
+}
+.navigation-sheet .account-access {
+  color: var(--brand-deep);
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.account-bookings {
+  display: grid;
+  gap: 16px;
+  margin: 24px 0;
+}
+.account-bookings article,
+.account-leg {
+  border-top: 1px solid var(--border);
+  padding: 18px 0;
+}
+.checkout-notice {
+  padding: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin: 16px 0;
+}
+.checkout-notice a {
+  text-decoration: underline;
+}
+@media (min-width: 1081px) {
+  .rail-header-inner {
+    gap: 20px;
+  }
+}
+@media (max-width: 600px) {
+  .rail-header-inner > .account-access a:nth-child(2) {
+    display: none;
+  }
+  .rail-header-inner > .account-access {
+    margin-left: auto;
+  }
+  .account-main {
+    margin-top: 24px;
+  }
+  .account-main .panel {
+    padding: 20px;
+  }
+}

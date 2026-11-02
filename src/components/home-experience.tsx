@@ -6,10 +6,13 @@ import { classes } from "@/lib/booking";
 import { homeAssets } from "@/lib/home-content";
 import HomePhoto from "./home-photo";
 import { focusBooking } from "./booking-navigation";
+import { ReferenceLayoutBrowser } from "./coach-booking";
 const photographs = {
   economy: homeAssets.economy,
   standard: homeAssets.standard,
   business: homeAssets.business,
+  sleeper: homeAssets.business,
+  parlour: homeAssets.standard,
 };
 export default function HomeExperience() {
   const [selected, setSelected] = useState(classes[0]);
@@ -83,6 +86,7 @@ export default function HomeExperience() {
           Interior photography is illustrative and does not represent confirmed
           Pakistan Railways facilities.
         </p>
+        <ReferenceLayoutBrowser />
       </div>
       <dialog
         className="class-detail-dialog"
@@ -114,8 +118,9 @@ export default function HomeExperience() {
           </li>
         </ul>
         <p className="class-integrity">
-          Class descriptions and availability in this booking flow use sample
-          data. Facilities can vary by service; confirm them before travel.
+          Coach variants follow the supplied railway references. Service
+          configurations, fares and availability in this booking flow remain
+          sample data. Facilities vary by service.
         </p>
         <button
           className="button primary full"

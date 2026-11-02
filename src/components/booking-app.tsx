@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import SearchForm from "./search-form";
+import VerifiedSeatSelection, { CoachClassChoices } from "./coach-booking";
 import {
   customerDraft,
   destinationDraft,
@@ -32,7 +33,9 @@ import {
   Booking,
   changeLeg,
   chooseSeat,
-  classes,
+  className,
+  seatLabel,
+  seatDescription,
   earliestStep,
   fare,
   freshBooking,
@@ -117,6 +120,35 @@ export default function BookingApp({ step }: { step: string }) {
       const raw = sessionStorage.getItem(key);
       if (raw) next = restore(raw);
       next = customerDraft(next);
+      if (next.recoveryNotice) message = next.recoveryNotice;
+      if (
+        next.status === "draft" &&
+        next.legs.some((l) => l.classId && !l.offer)
+      ) {
+        const staleLegs = next.legs
+          .filter((l) => l.classId && !l.offer)
+          .map((l) => l.id);
+        next = {
+          ...next,
+          legs: next.legs.map((l) =>
+            staleLegs.includes(l.id) ? { ...l, classId: "" } : l,
+          ),
+          assignments: Object.fromEntries(
+            Object.entries(next.assignments).filter(
+              ([k]) =>
+                !staleLegs.includes(k.split(":")[0] as "outbound" | "return"),
+            ),
+          ),
+          suggested: Object.fromEntries(
+            Object.entries(next.suggested).filter(
+              ([k]) =>
+                !staleLegs.includes(k.split(":")[0] as "outbound" | "return"),
+            ),
+          ),
+        };
+        message =
+          "Your earlier draft used a legacy seat layout. Choose a class and places again for the updated coach maps. Your trains, travellers and contact details are saved.";
+      }
       if (step === "search") {
         const destination = new URLSearchParams(window.location.search).get(
           "destination",
@@ -135,7 +167,12 @@ export default function BookingApp({ step }: { step: string }) {
         /* Storage can be unavailable in private browser policies. */
       }
     }
-    if (step === "seats" && earliestStep(next) >= 4 && !next.conflictHandled)
+    if (
+      step === "seats" &&
+      earliestStep(next) >= 4 &&
+      !next.conflictHandled &&
+      !next.legs.some((l) => l.offer)
+    )
       next = recommend(next);
     queueMicrotask(() => {
       setB(next);
@@ -281,10 +318,16 @@ export default function BookingApp({ step }: { step: string }) {
   const selectTrain = () => {
     if (!b || !selected) return;
     const existing = b.legs.find((l) => l.id === legId);
+    const sameTrain =
+      existing?.train.id === selected.id &&
+      existing.train.date === selected.date &&
+      existing.train.from === selected.from &&
+      existing.train.to === selected.to;
     let next = changeLeg(b, {
       id: legId,
       train: selected,
-      classId: existing?.train.id === selected.id ? existing.classId : "",
+      classId: sameTrain ? existing!.classId : "",
+      ...(sameTrain && existing?.offer ? { offer: existing.offer } : {}),
     });
     if (legId === "outbound") {
       const r = next.legs.find((l) => l.id === "return");
@@ -546,7 +589,7 @@ export default function BookingApp({ step }: { step: string }) {
                     "Choose a departure that works for you. Sample schedules and fares are shown.",
                     "Compare the available options for your journey.",
                     "Keep your group’s details together in one booking.",
-                    "We’ve selected suggested seats for your group. You can change them.",
+                    "Review suggested places, including berth types and tiers. You can change or remove them.",
                     "Take a moment to check your journey and traveller details.",
                     "Test payment — no charge will be made.",
                   ][index]
@@ -730,7 +773,7 @@ export default function BookingApp({ step }: { step: string }) {
                           </span>
                           <span className="fare">
                             <b>{money(t.price)}</b>
-                            <small>per person · Economy</small>
+                            <small>per person · Economy Class</small>
                           </span>
                         </label>
                         <div className="train-card-bottom">
@@ -823,66 +866,13 @@ export default function BookingApp({ step }: { step: string }) {
                     {count > 1 ? "s" : ""}
                   </span>
                 </div>
-                <div className="class-grid">
-                  {classes.map((c) => {
-                    const price = Math.round(leg.train.price * c.multiplier),
-                      limited = count > c.capacity;
-                    return (
-                      <article
-                        className={`class-card ${leg.classId === c.id ? "selected" : ""}`}
-                        key={c.id}
-                      >
-                        <span className="class-icon">
-                          <Armchair size={25} />
-                        </span>
-                        <h2>{c.name}</h2>
-                        <p>{c.description}</p>
-                        <ul>
-                          {c.benefits.map((v) => (
-                            <li key={v}>
-                              <Check size={17} />
-                              {v}
-                            </li>
-                          ))}
-                        </ul>
-                        <div className="class-price">
-                          <b>{money(price)}</b>
-                          <small>per person</small>
-                          <span>{money(price * count)} for your group</span>
-                        </div>
-                        {limited ? (
-                          <p className="capacity-error">
-                            Only {c.capacity} seats available in this sample
-                            service. Choose another class or train.
-                          </p>
-                        ) : null}
-                        <button
-                          className={`button full ${leg.classId === c.id ? "primary" : "secondary"}`}
-                          disabled={limited}
-                          aria-pressed={leg.classId === c.id}
-                          onClick={() => {
-                            save(changeLeg(b, { ...leg, classId: c.id }));
-                            setNotice(
-                              "Class saved. Changing class releases this leg’s previous seat choices.",
-                            );
-                          }}
-                        >
-                          {leg.classId === c.id ? (
-                            <>
-                              <Check size={16} /> Selected
-                            </>
-                          ) : (
-                            `Select ${c.name}`
-                          )}
-                        </button>
-                      </article>
-                    );
-                  })}
-                </div>
-                <p className="fineprint">
-                  <Info size={14} /> Class amenities and capacity are
-                  illustrative, not verified railway policies.
-                </p>
+                <CoachClassChoices
+                  key={`${leg.id}-${leg.train.id}-${leg.train.date}`}
+                  booking={b}
+                  leg={leg}
+                  onChange={save}
+                  onNotice={setNotice}
+                />
                 <div className="action-row">
                   <button className="text-button" onClick={() => go(1)}>
                     Change train
@@ -1179,219 +1169,231 @@ export default function BookingApp({ step }: { step: string }) {
                   <TrainFront size={18} />
                   <b>{leg.train.name}</b>
                   <span>
-                    {classes.find((c) => c.id === leg.classId)?.name} ·{" "}
-                    {prettyDate(leg.train.date)}
+                    {className(leg)} · {prettyDate(leg.train.date)}
                   </span>
                   <span>
                     {station(leg.train.from, b.search)} →{" "}
                     {station(leg.train.to, b.search)}
                   </span>
                 </div>
-                <div className="seat-layout">
-                  <section className="panel traveller-seats">
-                    <span className="eyebrow">YOUR GROUP</span>
-                    <h2>Who’s sitting where?</h2>
-                    <p className="subtle">
-                      Choose a traveller to change their seat.
-                    </p>
-                    {b.passengers.map((p, i) => {
-                      const s = b.assignments[seatKey(leg.id, p.id)];
-                      return (
-                        <button
-                          key={p.id}
-                          className={`passenger-seat ${active.id === p.id ? "active" : ""}`}
-                          aria-pressed={active.id === p.id}
-                          onClick={() => setActivePid(p.id)}
-                        >
-                          <span className="number-badge">{i + 1}</span>
-                          <span>
-                            <b>{p.name}</b>
-                            <small>
-                              {p.type === "adult" ? "Adult" : "Child"} ·{" "}
-                              {s
-                                ? `Coach ${s.coach}, seat ${s.number}`
-                                : "Choose a replacement seat"}
-                            </small>
-                          </span>
-                          {s ? <Check size={17} /> : <Info size={17} />}
-                        </button>
-                      );
-                    })}
-                    <div className="assignment-count" role="status">
-                      <CheckCheck size={17} />
-                      {
-                        b.passengers.filter(
-                          (p) => b.assignments[seatKey(leg.id, p.id)],
-                        ).length
-                      }{" "}
-                      of {count} seats selected for this leg
-                    </div>
-                    <div className="recommend-note">
-                      <Info size={17} />
-                      <p>
-                        {b.passengers.every(
-                          (p) => b.assignments[seatKey(leg.id, p.id)],
-                        )
-                          ? "Suggested seats are selected and editable. "
-                          : "Choose a replacement for the unassigned traveller. "}
-                        {!allocationIsTogether(b, leg.id) && seatsComplete(b)
-                          ? "Seats together were unavailable in one row or coach; review your group’s assignments."
-                          : "You’re free to make yourself comfortable elsewhere."}
+                {leg.offer ? (
+                  <VerifiedSeatSelection
+                    key={leg.id}
+                    booking={b}
+                    leg={leg}
+                    onChange={save}
+                    onNotice={setNotice}
+                  />
+                ) : (
+                  <div className="seat-layout">
+                    <section className="panel traveller-seats">
+                      <span className="eyebrow">YOUR GROUP</span>
+                      <h2>Who’s sitting where?</h2>
+                      <p className="subtle">
+                        Choose a traveller to change their seat.
                       </p>
-                    </div>
-                  </section>
-                  <section className="panel coach-panel">
-                    <div className="panel-heading">
-                      <div>
-                        <span className="eyebrow">CHOOSE YOUR PLACE</span>
-                        <h2>Coach {coach}</h2>
+                      {b.passengers.map((p, i) => {
+                        const s = b.assignments[seatKey(leg.id, p.id)];
+                        return (
+                          <button
+                            key={p.id}
+                            className={`passenger-seat ${active.id === p.id ? "active" : ""}`}
+                            aria-pressed={active.id === p.id}
+                            onClick={() => setActivePid(p.id)}
+                          >
+                            <span className="number-badge">{i + 1}</span>
+                            <span>
+                              <b>{p.name}</b>
+                              <small>
+                                {p.type === "adult" ? "Adult" : "Child"} ·{" "}
+                                {s
+                                  ? `Coach ${s.coach}, seat ${s.number}`
+                                  : "Choose a replacement seat"}
+                              </small>
+                            </span>
+                            {s ? <Check size={17} /> : <Info size={17} />}
+                          </button>
+                        );
+                      })}
+                      <div className="assignment-count" role="status">
+                        <CheckCheck size={17} />
+                        {
+                          b.passengers.filter(
+                            (p) => b.assignments[seatKey(leg.id, p.id)],
+                          ).length
+                        }{" "}
+                        of {count} seats selected for this leg
                       </div>
-                      <label>
-                        Coach{" "}
-                        <select
-                          aria-label="Choose coach"
-                          value={coach}
-                          onChange={(e) => setCoach(e.target.value)}
+                      <div className="recommend-note">
+                        <Info size={17} />
+                        <p>
+                          {b.passengers.every(
+                            (p) => b.assignments[seatKey(leg.id, p.id)],
+                          )
+                            ? "Suggested seats are selected and editable. "
+                            : "Choose a replacement for the unassigned traveller. "}
+                          {!allocationIsTogether(b, leg.id) && seatsComplete(b)
+                            ? "Seats together were unavailable in one row or coach; review your group’s assignments."
+                            : "You’re free to make yourself comfortable elsewhere."}
+                        </p>
+                      </div>
+                    </section>
+                    <section className="panel coach-panel">
+                      <div className="panel-heading">
+                        <div>
+                          <span className="eyebrow">CHOOSE YOUR PLACE</span>
+                          <h2>Coach {coach}</h2>
+                        </div>
+                        <label>
+                          Coach{" "}
+                          <select
+                            aria-label="Choose coach"
+                            value={coach}
+                            onChange={(e) => setCoach(e.target.value)}
+                          >
+                            <option>A</option>
+                            <option>B</option>
+                          </select>
+                        </label>
+                      </div>
+                      <div className="seat-legend">
+                        <span>
+                          <i className="legend-free" /> Free
+                        </span>
+                        <span>
+                          <i className="legend-selected">✓</i> Selected
+                        </span>
+                        <span>
+                          <i className="legend-sold">×</i> Sold
+                        </span>
+                        <span>☆ Suggested</span>
+                      </div>
+                      <div className="view-tabs">
+                        <button
+                          className={seatView === "map" ? "active" : ""}
+                          onClick={() => setSeatView("map")}
                         >
-                          <option>A</option>
-                          <option>B</option>
-                        </select>
-                      </label>
-                    </div>
-                    <div className="seat-legend">
-                      <span>
-                        <i className="legend-free" /> Free
-                      </span>
-                      <span>
-                        <i className="legend-selected">✓</i> Selected
-                      </span>
-                      <span>
-                        <i className="legend-sold">×</i> Sold
-                      </span>
-                      <span>☆ Suggested</span>
-                    </div>
-                    <div className="view-tabs">
-                      <button
-                        className={seatView === "map" ? "active" : ""}
-                        onClick={() => setSeatView("map")}
-                      >
-                        Seat map
-                      </button>
-                      <button
-                        className={seatView === "list" ? "active" : ""}
-                        onClick={() => setSeatView("list")}
-                      >
-                        Text selection
-                      </button>
-                    </div>
-                    <p className="fineprint">
-                      Selecting for <b>{active.name}</b> · {money(fare(leg))} /
-                      seat · no extra seat fee
-                    </p>
-                    {seatView === "map" ? (
-                      <div
-                        className="coach-scroll"
-                        role="region"
-                        aria-label="Schematic coach seat map"
-                        tabIndex={0}
-                      >
-                        <div className="coach">
-                          <div className="coach-top">
-                            <span>WC</span>
-                            <span>FRONT OF COACH ↑</span>
-                            <span>DOOR</span>
+                          Seat map
+                        </button>
+                        <button
+                          className={seatView === "list" ? "active" : ""}
+                          onClick={() => setSeatView("list")}
+                        >
+                          Text selection
+                        </button>
+                      </div>
+                      <p className="fineprint">
+                        Selecting for <b>{active.name}</b> · {money(fare(leg))}{" "}
+                        / seat · no extra seat fee
+                      </p>
+                      {seatView === "map" ? (
+                        <div
+                          className="coach-scroll"
+                          role="region"
+                          aria-label="Schematic coach seat map"
+                          tabIndex={0}
+                        >
+                          <div className="coach">
+                            <div className="coach-top">
+                              <span>WC</span>
+                              <span>FRONT OF COACH ↑</span>
+                              <span>DOOR</span>
+                            </div>
+                            <div className="seat-grid">
+                              {Array.from({ length: 16 }, (_, i) => {
+                                const n = i + 1;
+                                const owner = b.passengers.find((p) => {
+                                  const v =
+                                    b.assignments[seatKey(leg.id, p.id)];
+                                  return v?.coach === coach && v.number === n;
+                                });
+                                const taken = unavailable(b, leg, {
+                                  coach,
+                                  number: n,
+                                });
+                                const suggested =
+                                  owner &&
+                                  b.suggested[seatKey(leg.id, owner.id)]
+                                    ?.coach === coach &&
+                                  b.suggested[seatKey(leg.id, owner.id)]
+                                    ?.number === n;
+                                return (
+                                  <button
+                                    key={n}
+                                    className={`seat ${owner ? "assigned" : ""} ${taken ? "sold" : ""} ${i % 4 === 1 ? "before-aisle" : ""}`}
+                                    disabled={
+                                      taken ||
+                                      (!!owner && owner.id !== active.id)
+                                    }
+                                    aria-label={`Coach ${coach}, seat ${n}, ${taken ? "Sold" : owner ? `selected for ${owner.name}` : "Free"}, ${money(fare(leg))}${suggested ? ", recommended" : ""}`}
+                                    onClick={(e) => {
+                                      seatTrigger.current = e.currentTarget;
+                                      setCandidate({ coach, number: n });
+                                    }}
+                                  >
+                                    <span className="seat-shape">
+                                      <Armchair size={32} />
+                                      {owner && (
+                                        <b>{b.passengers.indexOf(owner) + 1}</b>
+                                      )}
+                                      {taken && <span>×</span>}
+                                    </span>
+                                    <b>{n}</b>
+                                    <small>
+                                      {taken
+                                        ? "Sold"
+                                        : owner
+                                          ? "✓ Selected"
+                                          : "Free"}
+                                    </small>
+                                    {suggested && <em>☆ Suggested</em>}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <div className="coach-bottom">
+                              SCHEMATIC SEAT LAYOUT
+                            </div>
                           </div>
-                          <div className="seat-grid">
-                            {Array.from({ length: 16 }, (_, i) => {
-                              const n = i + 1;
+                        </div>
+                      ) : (
+                        <div className="seat-list">
+                          {availableSeats(leg.classId)
+                            .filter(
+                              (s) =>
+                                s.coach === coach && !unavailable(b, leg, s),
+                            )
+                            .map((s) => {
                               const owner = b.passengers.find((p) => {
                                 const v = b.assignments[seatKey(leg.id, p.id)];
-                                return v?.coach === coach && v.number === n;
+                                return (
+                                  v?.coach === s.coach && v.number === s.number
+                                );
                               });
-                              const taken = unavailable(b, leg, {
-                                coach,
-                                number: n,
-                              });
-                              const suggested =
-                                owner &&
-                                b.suggested[seatKey(leg.id, owner.id)]
-                                  ?.coach === coach &&
-                                b.suggested[seatKey(leg.id, owner.id)]
-                                  ?.number === n;
                               return (
                                 <button
-                                  key={n}
-                                  className={`seat ${owner ? "assigned" : ""} ${taken ? "sold" : ""} ${i % 4 === 1 ? "before-aisle" : ""}`}
-                                  disabled={
-                                    taken || (!!owner && owner.id !== active.id)
-                                  }
-                                  aria-label={`Coach ${coach}, seat ${n}, ${taken ? "Sold" : owner ? `selected for ${owner.name}` : "Free"}, ${money(fare(leg))}${suggested ? ", recommended" : ""}`}
+                                  className="button secondary"
+                                  key={s.number}
+                                  disabled={!!owner && owner.id !== active.id}
                                   onClick={(e) => {
                                     seatTrigger.current = e.currentTarget;
-                                    setCandidate({ coach, number: n });
+                                    setCandidate(s);
                                   }}
                                 >
-                                  <span className="seat-shape">
-                                    <Armchair size={32} />
-                                    {owner && (
-                                      <b>{b.passengers.indexOf(owner) + 1}</b>
-                                    )}
-                                    {taken && <span>×</span>}
-                                  </span>
-                                  <b>{n}</b>
-                                  <small>
-                                    {taken
-                                      ? "Sold"
-                                      : owner
-                                        ? "✓ Selected"
-                                        : "Free"}
-                                  </small>
-                                  {suggested && <em>☆ Suggested</em>}
+                                  Coach {s.coach} · Seat {s.number} ·{" "}
+                                  {owner ? owner.name : "Free"} ·{" "}
+                                  {money(fare(leg))}
                                 </button>
                               );
                             })}
-                          </div>
-                          <div className="coach-bottom">
-                            SCHEMATIC SEAT LAYOUT
-                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="seat-list">
-                        {availableSeats(leg.classId)
-                          .filter(
-                            (s) => s.coach === coach && !unavailable(b, leg, s),
-                          )
-                          .map((s) => {
-                            const owner = b.passengers.find((p) => {
-                              const v = b.assignments[seatKey(leg.id, p.id)];
-                              return (
-                                v?.coach === s.coach && v.number === s.number
-                              );
-                            });
-                            return (
-                              <button
-                                className="button secondary"
-                                key={s.number}
-                                disabled={!!owner && owner.id !== active.id}
-                                onClick={(e) => {
-                                  seatTrigger.current = e.currentTarget;
-                                  setCandidate(s);
-                                }}
-                              >
-                                Coach {s.coach} · Seat {s.number} ·{" "}
-                                {owner ? owner.name : "Free"} ·{" "}
-                                {money(fare(leg))}
-                              </button>
-                            );
-                          })}
-                      </div>
-                    )}
-                  </section>
-                  <aside>
-                    <Summary b={b} />
-                  </aside>
-                </div>
+                      )}
+                    </section>
+                    <aside>
+                      <Summary b={b} />
+                    </aside>
+                  </div>
+                )}
                 <div className="action-row">
                   <span className="fineprint">
                     <ShieldCheck size={15} /> Suggested seats are editable, with
@@ -1523,10 +1525,7 @@ export default function BookingApp({ step }: { step: string }) {
                   </div>
                   <p>
                     <TrainFront size={17} />
-                    {l.train.name}{" "}
-                    <span className="pill">
-                      {classes.find((c) => c.id === l.classId)?.name}
-                    </span>
+                    {l.train.name} <span className="pill">{className(l)}</span>
                     <button className="text-button" onClick={() => go(2)}>
                       Edit class
                     </button>
@@ -1542,7 +1541,8 @@ export default function BookingApp({ step }: { step: string }) {
                             <small>{p.type}</small>
                           </span>
                           <span>
-                            Coach {s?.coach} · Seat {s?.number}
+                            Coach {s?.coach} · Place {s ? seatLabel(s) : "—"} ·{" "}
+                            {s && seatDescription(s)}
                           </span>
                           <b>{money(fare(l))}</b>
                         </div>
@@ -1716,8 +1716,7 @@ export default function BookingApp({ step }: { step: string }) {
                     </div>
                     <div className="ticket-body">
                       <span className="eyebrow">
-                        {l.train.name} ·{" "}
-                        {classes.find((c) => c.id === l.classId)?.name}
+                        {l.train.name} · {className(l)}
                       </span>
                       <h2>
                         {station(l.train.from, b.search)}{" "}
@@ -1742,7 +1741,10 @@ export default function BookingApp({ step }: { step: string }) {
                               Coach <b>{s?.coach}</b>
                             </span>
                             <span>
-                              Seat <b>{s?.number}</b>
+                              Place <b>{s ? seatLabel(s) : "—"}</b>
+                              <small>
+                                {s && seatDescription(s)} · {money(fare(l))}
+                              </small>
                             </span>
                           </div>
                         );
@@ -1866,9 +1868,7 @@ function Summary({ b }: { b: Booking }) {
             {prettyDate(l.train.date)} · {l.train.departure}
           </p>
           <small>
-            {l.train.name} ·{" "}
-            {classes.find((c) => c.id === l.classId)?.name ??
-              "Class to be selected"}
+            {l.train.name} · {className(l)}
           </small>
         </div>
       ))}

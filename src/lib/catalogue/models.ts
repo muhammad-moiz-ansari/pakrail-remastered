@@ -80,6 +80,9 @@ export const travelClassSchema = z.strictObject({
   name: text,
   code: z.string().trim().min(1).max(40).optional(),
   description: z.string().trim().min(1).max(2000).optional(),
+  aliases: z.array(text).max(50).optional(),
+  accommodationModes: z.array(z.enum(["seat", "berth", "recliner"])).optional(),
+  sourceCodes: z.record(z.string(), z.string()).optional(),
 });
 const stopSchema = z.strictObject({
   stationId: identifier,

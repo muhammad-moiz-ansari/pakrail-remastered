@@ -1,0 +1,37 @@
+1. Economy (Seat):
+
+    | 03B 02B 01B
+
+61S | 06B 05B 04B
+62S | 09B 08B 07B
+
+63S | 12B 11B 10B
+64S | 15B 14B 13B
+
+65S | 18B 17B 16B
+66S | 21B 20B 19B
+
+67S | 24B 23B 22B
+68S | 27B 26B 25B
+
+69S | 30B 29B 28B
+70S | 33B 32B 31B
+
+71S | 36B 35B 34B
+72S | 39B 38B 37B
+
+73S | 42B 41B 40B
+74S | 45B 44B 43B
+
+75S | 48B 47B 46B
+76S | 51B 50B 49B
+
+77S | 54B 53B 52B
+78S | 57B 56B 55B
+
+    | 60B 59B 58B
+
+----------------------------
+
+Empty spaces indicate a small table on both corners left and right
+Seats are fixed not rotatable

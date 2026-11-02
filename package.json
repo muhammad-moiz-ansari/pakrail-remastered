@@ -13,7 +13,8 @@
     "db:check": "tsx scripts/catalogue.ts check",
     "db:indexes": "tsx scripts/catalogue.ts indexes",
     "catalogue:import": "tsx scripts/catalogue.ts import",
-    "careers:import": "tsx scripts/careers.ts"
+    "careers:import": "tsx scripts/careers.ts",
+    "coaches:seed": "tsx scripts/coaches.ts"
   },
   "dependencies": {
     "@next/env": "^16.4.3",

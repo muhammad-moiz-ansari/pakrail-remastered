@@ -1,0 +1,523 @@
+.verified-booking-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.verified-booking-layout > * {
+  min-width: 0;
+}
+.verified-group {
+  position: sticky;
+  top: 130px;
+  padding: 22px;
+}
+.verified-group h2 {
+  margin: 10px 0;
+}
+.verified-group .passenger-seat {
+  width: 100%;
+  text-align: left;
+}
+.verified-group .passenger-seat > span:nth-child(2) {
+  min-width: 0;
+}
+.verified-group .passenger-seat small {
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.verified-group .fineprint {
+  margin-top: 16px;
+}
+.verified-coach-panel {
+  padding: 24px;
+  overflow: hidden;
+}
+.verified-coach-panel > .panel-heading {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.coach-layout-name {
+  margin: 20px 0 12px;
+  font-size: 17px;
+}
+.coach-selection-help {
+  grid-column: 1/-1;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface, #fffdf8);
+  font-size: 13px;
+  color: var(--muted);
+}
+.coach-selection-help svg {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.train-overview {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 12px 4px 16px;
+  margin-bottom: 8px;
+}
+.train-overview button {
+  position: relative;
+  flex: 0 0 150px;
+  padding: 12px 14px;
+  min-height: 72px;
+  border-radius: 20px;
+  border: 2px solid var(--border);
+  background: #f2f1e9;
+  text-align: center;
+  font-size: 12px;
+}
+.train-overview button:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: -22px;
+  top: 30px;
+  width: 20px;
+  border-block: 2px solid #8b9990;
+  height: 8px;
+}
+.train-overview button.active {
+  border-color: var(--green);
+  background: var(--soft);
+}
+.train-overview button span,
+.train-overview button b {
+  display: block;
+}
+.train-overview button span {
+  font-size: 14px;
+  margin-bottom: 3px;
+}
+.coach-legends {
+  display: grid;
+  gap: 14px;
+  padding: 18px 0;
+  border-block: 1px solid var(--border);
+  font-size: 12px;
+}
+.coach-legends > div > b {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.legend-items {
+  display: flex;
+  gap: 12px 18px;
+  flex-wrap: wrap;
+}
+.legend-items > span {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.accommodation-icon {
+  width: 40px;
+  height: 40px;
+  display: block;
+  flex-shrink: 0;
+}
+.legend-items .accommodation-icon {
+  width: 27px;
+  height: 27px;
+}
+.state-swatch {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #789286;
+  border-radius: 5px;
+  align-items: center;
+  justify-content: center;
+  font-style: normal;
+  font-weight: 750;
+  background: #fffdf8;
+}
+.state-swatch.selected {
+  background: #176c4d;
+  color: white;
+  border-color: #176c4d;
+}
+.state-swatch.male,
+.place-tile.occupied.male {
+  background: #eaf1fa;
+  color: #355b8a;
+  border-color: #a4b7ce;
+}
+.state-swatch.female,
+.place-tile.occupied.female {
+  background: #f8eaf0;
+  color: #87435e;
+  border-color: #c9a9b7;
+}
+.state-swatch.occupied {
+  background: #e9ebe7;
+  color: #57625b;
+  border-color: #a3aba5;
+}
+.coach-evidence-note {
+  margin: 16px 0;
+  padding: 14px 16px;
+  font-size: 13px;
+  border-left: 3px solid #b99552;
+  background: #f6f0e1;
+  color: #63522d;
+  line-height: 1.7;
+}
+.coach-explanation {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 16px 0;
+  line-height: 1.7;
+}
+.verified-map-scroll {
+  max-height: 720px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #efeee8;
+  margin: 16px 0;
+  scrollbar-gutter: stable;
+}
+.verified-coach-shell {
+  margin: 18px auto;
+  padding: 12px;
+  border: 2px solid #8d9b91;
+  background: #fcfbf5;
+  border-radius: 62px 62px 50px 50px;
+  box-shadow: 0 4px 16px #173a2412;
+}
+.neutral-coach-end {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #68746d;
+}
+.coach-floor {
+  position: relative;
+  border-block: 1px solid #b4beb5;
+}
+.coach-structure {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #63736a;
+  font-size: 10px;
+  line-height: 1.1;
+}
+.structure-table {
+  border: 1px solid #aab4ab;
+  background: #e3e2d6;
+  border-radius: 7px;
+  z-index: 1;
+}
+.structure-wall {
+  background: #8a968c;
+  border-radius: 2px;
+}
+.structure-aisle {
+  background: #f0efe7;
+  border-inline: 1px dashed #d4d6c9;
+}
+.structure-aisle > span {
+  position: absolute;
+  top: 12px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+.structure-toilet {
+  border: 1px solid #b5bcb2;
+  background: #ecece4;
+}
+.structure-fixture {
+  border: 1px solid #c2c8be;
+  background: #e0e4dc;
+  border-radius: 4px;
+}
+.tier-inset-label {
+  position: absolute;
+  width: 110px;
+  text-align: center;
+  color: #65766b;
+  font-size: 9px;
+  line-height: 1.5;
+  pointer-events: none;
+  z-index: 1;
+}
+.place-tile {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: #fffdf7;
+  color: #356b50;
+  border: 1px solid #819b89;
+  border-radius: 9px;
+  padding: 5px 3px;
+  box-shadow: 0 1px 2px #183c2110;
+}
+.place-tile.berth {
+  border-radius: 6px;
+}
+.place-tile.recliner {
+  border-radius: 14px;
+}
+.place-tile:hover {
+  border-color: var(--green);
+  box-shadow: 0 0 0 2px #176c4d25;
+  z-index: 2;
+}
+.place-tile:is(:hover, :focus-visible)::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 200px;
+  max-width: 50vw;
+  padding: 9px 12px;
+  border-radius: 7px;
+  background: #173d2c;
+  color: #fffdf5;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.6;
+  box-shadow: 0 3px 12px #173d2c25;
+  pointer-events: none;
+  z-index: 5;
+}
+.place-tile[data-side="left"]:is(:hover, :focus-visible)::after {
+  right: auto;
+  left: 0;
+}
+.experience-mosaic .tile-sleeper {
+  grid-column: 1;
+  grid-row: 3;
+}
+.experience-mosaic .tile-parlour {
+  grid-column: 2/4;
+  grid-row: 3;
+}
+.place-tile:focus-visible {
+  outline: 3px solid #1f664c;
+  outline-offset: 2px;
+  z-index: 3;
+}
+.place-tile.occupied {
+  background: #e9ebe6;
+  border-color: #adb6ac;
+  color: #59665b;
+  box-shadow: none;
+  cursor: default;
+}
+.place-tile.occupied .accommodation-icon {
+  opacity: 0.65;
+}
+.place-tile.selected {
+  background: #176c4d;
+  border-color: #0d4e36;
+  color: white;
+  box-shadow: 0 0 0 1px #176c4d;
+}
+.place-tile.selected[aria-disabled="true"] {
+  cursor: default;
+}
+.place-number {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.place-art {
+  position: relative;
+  display: block;
+}
+.place-tier {
+  display: block;
+  font-size: 9px;
+  line-height: 1.2;
+  text-transform: capitalize;
+}
+.place-art .accommodation-icon {
+  width: 36px;
+  height: 36px;
+}
+.place-price {
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.2;
+  text-align: center;
+}
+.occupancy-mark,
+.place-check {
+  position: absolute;
+  right: -12px;
+  bottom: 3px;
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  font-weight: 750;
+  line-height: 18px;
+  background: inherit;
+}
+.place-check {
+  background: #176c4d;
+  border-radius: 50%;
+  padding: 1px;
+}
+.verified-place-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+  max-height: 720px;
+  overflow: auto;
+  padding: 5px;
+}
+.place-tile.list-place {
+  position: relative;
+  min-height: 150px;
+  padding: 12px;
+  gap: 6px;
+}
+.list-place > span:last-child {
+  font-size: 11px;
+  line-height: 1.5;
+}
+.verified-place-dialog > .accommodation-icon {
+  margin: 16px auto;
+  width: 60px;
+  height: 60px;
+  color: var(--green);
+}
+.verified-place-dialog p {
+  margin-top: 8px;
+}
+.verified-place-dialog {
+  max-height: 90dvh;
+  overflow: auto;
+}
+.confirmation-traveller {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) auto minmax(120px, 1.25fr);
+  align-items: start;
+}
+.confirmation-traveller > span {
+  min-width: 0;
+}
+.confirmation-traveller > span:not(:first-child),
+.confirmation-traveller small {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.traveller-table > div > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.reference-layout-browser {
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface, #fffdf8);
+  min-width: 0;
+}
+.reference-layout-browser > summary {
+  font-weight: 750;
+  cursor: pointer;
+  padding: 5px;
+  min-height: 44px;
+}
+.reference-layout-browser > label {
+  display: block;
+  margin: 16px 0;
+  max-width: 100%;
+  font-size: 13px;
+}
+.reference-layout-browser select {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 8px;
+}
+.reference-layout-browser .verified-coach-map {
+  max-width: 800px;
+  margin: auto;
+}
+.class-icon .accommodation-icon {
+  width: 30px;
+  height: 30px;
+}
+.experience-mosaic .tile-sleeper,
+.experience-mosaic .tile-parlour {
+  min-height: 260px;
+}
+@media (max-width: 950px) {
+  .verified-booking-layout {
+    grid-template-columns: 1fr;
+  }
+  .verified-group {
+    position: static;
+  }
+  .verified-group .passenger-seat {
+    padding: 12px;
+  }
+}
+@media (max-width: 600px) {
+  .confirmation-traveller {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .verified-coach-panel,
+  .verified-group {
+    padding: 16px;
+  }
+  .verified-booking-layout {
+    gap: 16px;
+  }
+  .reference-layout-browser {
+    padding: 12px;
+  }
+  .verified-map-scroll {
+    max-height: 620px;
+  }
+  .verified-place-list {
+    grid-template-columns: 1fr;
+    max-height: 620px;
+  }
+  .verified-place-dialog {
+    width: calc(100% - 24px);
+    padding: 20px;
+  }
+  .legend-items {
+    gap: 10px 14px;
+  }
+  .coach-legends {
+    font-size: 11px;
+  }
+  .experience-mosaic .tile-sleeper,
+  .experience-mosaic .tile-parlour {
+    grid-column: auto;
+    grid-row: auto;
+    min-height: 240px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .verified-coach-map * {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}

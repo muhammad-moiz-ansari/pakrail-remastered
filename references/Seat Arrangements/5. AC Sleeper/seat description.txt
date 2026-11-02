@@ -1,0 +1,34 @@
+AC Sleeper Class:
+
+Left Side (Corridor / Toilets) | Right Side Cabins
+=========================================================
+                               |        A-Cabin   [TABLE]
+                               |     AU2   |   AL1
+-------------------------------|-------------------------
+        TOILET A-Cabin         |        TOILET B-Cabin
+-------------------------------|-------------------------
+                               |        B-Cabin   [TABLE]
+                               |     BU2   |   BL1
+-------------------------------|-------------------------
+                               |     CU2   |   CL1
+                               |        C-Cabin   [TABLE]
+       CU4   |   CL3           |
+-------------------------------|-------------------------
+        TOILET D-Cabin         |        TOILET C-Cabin
+-------------------------------|-------------------------
+                               |     DU2   |   DL1
+                               |        D-Cabin   [TABLE]
+                               |     DU4   |   DL3
+-------------------------------|-------------------------
+                               |     EU2   |   EL1
+                               |        E-Cabin   [TABLE]
+-------------------------------|-------------------------
+        TOILET E-Cabin         |        TOILET F-Cabin
+-------------------------------|-------------------------
+                               |        F-Cabin   [TABLE]
+                               |     FU2   |   FL1
+=========================================================
+
+-----------------------------------------------------------------------
+You can book individual shared beds (berths) inside AC Sleeper coaches. You are not forced to book the entire room.
+When you book a ticket, you are allocated a single specific berth (bed) within a compartment, meaning you will share the room with other passengers unless you intentionally purchase all the berths in that compartment.

@@ -1,3 +1,14 @@
+import {
+  travelClasses,
+  getLayout,
+  sampleCoachServices,
+  serviceOffers,
+  sampleOccupancy,
+  placeDescription,
+  offerSchema,
+  type CoachOffer,
+  type CoachPlace,
+} from "./coach-layouts";
 export const stations = [
   { id: "LHE", name: "Lahore Junction", city: "Lahore", code: "LHE" },
   { id: "RWP", name: "Rawalpindi", city: "Rawalpindi", code: "RWP" },
@@ -15,7 +26,8 @@ export const knownStation = (id: string, search: Search) =>
   (/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$/.test(id) &&
     typeof search.stationNames?.[id] === "string" &&
     search.stationNames[id].trim().length > 0);
-export const money = (n: number) => `PKR ${n.toLocaleString("en-PK")}`;
+export const money = (n: number) =>
+  Number.isFinite(n) ? `PKR ${n.toLocaleString("en-PK")}` : "Fare unavailable";
 export function today() {
   const p = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Karachi",
@@ -39,7 +51,8 @@ export const prettyDate = (d: string) =>
         timeZone: "UTC",
       })
     : "Add return";
-export const classes = [
+// Frozen prototype definitions are used ONLY to read older bookings.
+const legacyClasses = [
   {
     id: "economy",
     name: "Economy",
@@ -73,6 +86,7 @@ export const classes = [
     capacity: 4,
   },
 ];
+export const classes = travelClasses;
 export type Search = {
   from: string;
   to: string;
@@ -107,8 +121,37 @@ export type Train = {
   date: string;
   arrivalDay: number;
 };
-export type Leg = { id: "outbound" | "return"; train: Train; classId: string };
-export type Seat = { coach: string; number: number };
+export type Leg = {
+  id: "outbound" | "return";
+  train: Train;
+  classId: string;
+  offer?: CoachOffer;
+};
+export type Seat = {
+  coach: string;
+  number: number;
+  place?: {
+    id: string;
+    label: string;
+    physicalId: string;
+    layoutId: string;
+    layoutVersion: number;
+    type: CoachPlace["type"];
+    tier?: CoachPlace["tier"];
+    bay: string;
+    stack?: string;
+  };
+};
+export const seatLabel = (s: Seat) => s.place?.label ?? String(s.number);
+export const seatDescription = (s: Seat) =>
+  s.place
+    ? placeDescription({ ...s.place, x: 0, y: 0, width: 1, height: 1 })
+    : "Legacy seat";
+export const className = (l: Leg) =>
+  l.offer?.className ??
+  legacyClasses.find((c) => c.id === l.classId)?.name ??
+  classes.find((c) => c.id === l.classId)?.name ??
+  "Class to be selected";
 export type Scenario =
   "normal" | "empty" | "search-error" | "seat-conflict" | "payment-failure";
 export type Booking = {
@@ -125,6 +168,7 @@ export type Booking = {
   conflictHandled: boolean;
   suggested: Record<string, Seat>;
   conflict?: { legId: string; seat: Seat };
+  recoveryNotice?: string;
 };
 export const freshBooking = (): Booking => ({
   version: 1,
@@ -156,12 +200,12 @@ export function validDate(d: unknown): d is string {
     new Date(`${d}T12:00:00Z`).toISOString().slice(0, 10) === d
   );
 }
-export function searchErrors(s: Search) {
+export function searchErrors(s: Search, allowPast = false) {
   const e: Record<string, string> = {};
   if (!knownStation(s.from, s)) e.from = "Choose a departure station.";
   if (!knownStation(s.to, s)) e.to = "Choose an arrival station.";
   if (s.from && s.from === s.to) e.to = "Choose a different arrival station.";
-  if (!validDate(s.date) || s.date < today())
+  if (!validDate(s.date) || (!allowPast && s.date < today()))
     e.date = "Choose today or a future departure date.";
   if (s.trip === "undecided")
     e.date = "Choose a return date or select One Way.";
@@ -227,9 +271,95 @@ export function returnValid(out: Train, ret: Train) {
   );
 }
 export const fare = (l: Leg) =>
-  Math.round(
-    l.train.price * (classes.find((c) => c.id === l.classId)?.multiplier ?? 1),
+  l.offer
+    ? validOffer(l)
+      ? (l.offer.quote?.amount ?? NaN)
+      : NaN
+    : Math.round(
+        l.train.price *
+          (legacyClasses.find((c) => c.id === l.classId)?.multiplier ?? 1),
+      );
+export function validOffer(l: Leg) {
+  if (!l.offer) return false;
+  if (!offerSchema.safeParse(l.offer).success) return false;
+  const o = l.offer;
+  if (
+    o.from !== l.train.from ||
+    o.to !== l.train.to ||
+    o.date !== l.train.date ||
+    o.classId !== l.classId ||
+    o.serviceId !== `sample-${l.train.id.split("-").at(-1)}`
+  )
+    return false;
+  const service = sampleCoachServices.find((s) => s.id === o.serviceId);
+  if (!service) return false;
+  const expected = serviceOffers(service, o.from, o.to, o.date).find(
+    (v) => v.classId === o.classId && v.mode === o.mode,
   );
+  return !!expected && JSON.stringify(expected) === JSON.stringify(o);
+}
+export function seatForPlace(
+  l: Leg,
+  coachId: string,
+  placeId: string,
+): Seat | undefined {
+  const coach = l.offer?.coaches.find((c) => c.number === coachId),
+    layout = coach && getLayout(coach.layoutId, coach.layoutVersion);
+  const p = layout?.places.find((v) => v.id === placeId);
+  if (!coach || !layout || !p?.label || layout.verification !== "numbered")
+    return;
+  return {
+    coach: coach.number,
+    number: layout.places.indexOf(p) + 1,
+    place: {
+      id: p.id,
+      label: p.label,
+      physicalId: p.physicalId,
+      layoutId: layout.id,
+      layoutVersion: layout.version,
+      type: p.type,
+      ...(p.tier ? { tier: p.tier } : {}),
+      bay: p.bay,
+      ...(p.stack ? { stack: p.stack } : {}),
+    },
+  };
+}
+export function legSeats(l: Leg): Seat[] {
+  if (!l.offer) return availableSeats(l.classId);
+  if (!validOffer(l) || !l.offer.quote) return [];
+  return l.offer.coaches
+    .flatMap(
+      (c) =>
+        getLayout(c.layoutId, c.layoutVersion)
+          ?.places.map((p) => seatForPlace(l, c.number, p.id))
+          .filter((s): s is Seat => !!s) ?? [],
+    )
+    .filter((s) => !placeTaken(l, s));
+}
+function placeTaken(l: Leg, s: Seat) {
+  if (!l.offer) return sold(s.coach, s.number, l.classId);
+  const coach = l.offer.coaches.find((c) => c.number === s.coach),
+    layout = coach && getLayout(coach.layoutId, coach.layoutVersion);
+  if (!layout || !s.place) return true;
+  const expected = seatForPlace(l, s.coach, s.place.id);
+  return (
+    !expected ||
+    JSON.stringify(expected) !== JSON.stringify(s) ||
+    sampleOccupancy(layout, s.place.id).state !== "available"
+  );
+}
+export function removeSeat(b: Booking, legId: string, pid: string): Booking {
+  const key = seatKey(legId, pid);
+  return {
+    ...b,
+    assignments: Object.fromEntries(
+      Object.entries(b.assignments).filter(([k]) => k !== key),
+    ),
+    suggested: Object.fromEntries(
+      Object.entries(b.suggested).filter(([k]) => k !== key),
+    ),
+  };
+}
 export function pricing(b: Booking) {
   const base = b.legs.reduce((n, l) => n + fare(l) * b.passengers.length, 0);
   const discount = b.voucher === "DEMO10" ? Math.round(base * 0.1) : 0;
@@ -249,7 +379,7 @@ export function availableSeats(classId: string): Seat[] {
 }
 export function unavailable(b: Booking, l: Leg, s: Seat) {
   return (
-    sold(s.coach, s.number, l.classId) ||
+    placeTaken(l, s) ||
     !!(
       b.conflict?.legId === l.id &&
       b.conflict.seat.coach === s.coach &&
@@ -261,6 +391,13 @@ export function allocationIsTogether(b: Booking, legId: string) {
   const seats = b.passengers.map((p) => b.assignments[seatKey(legId, p.id)]);
   const first = seats[0];
   if (!first || seats.some((s) => !s)) return false;
+  if (first.place)
+    return seats.every(
+      (s) =>
+        s.coach === first.coach &&
+        s.place?.bay === first.place?.bay &&
+        s.place?.layoutId === first.place?.layoutId,
+    );
   return seats.every(
     (s) =>
       s.coach === first.coach &&
@@ -280,16 +417,40 @@ export function recommend(b: Booking): Booking {
     const needing = b.passengers.filter(
       (p) => !assignments[seatKey(l.id, p.id)],
     );
-    let free = availableSeats(l.classId).filter(
+    let free = legSeats(l).filter(
       (s) => !used.has(`${s.coach}:${s.number}`) && !unavailable(b, l, s),
     );
-    const together = free.find((s) =>
-      needing.every(
-        (_, i) =>
-          free.some((v) => v.coach === s.coach && v.number === s.number + i) &&
-          Math.floor((s.number - 1) / 4) === Math.floor((s.number + i - 1) / 4),
-      ),
-    );
+    if (l.offer) {
+      const sameBay = free.find(
+        (s) =>
+          free.filter(
+            (v) => v.coach === s.coach && v.place?.bay === s.place?.bay,
+          ).length >= needing.length,
+      );
+      if (sameBay)
+        free = [
+          ...free.filter(
+            (s) =>
+              s.coach === sameBay.coach && s.place?.bay === sameBay.place?.bay,
+          ),
+          ...free.filter(
+            (s) =>
+              s.coach !== sameBay.coach || s.place?.bay !== sameBay.place?.bay,
+          ),
+        ];
+    }
+    const together =
+      !l.offer &&
+      free.find((s) =>
+        needing.every(
+          (_, i) =>
+            free.some(
+              (v) => v.coach === s.coach && v.number === s.number + i,
+            ) &&
+            Math.floor((s.number - 1) / 4) ===
+              Math.floor((s.number + i - 1) / 4),
+        ),
+      );
     if (together)
       free = [
         ...free.filter(
@@ -325,9 +486,7 @@ export function chooseSeat(
     !l ||
     !b.passengers.some((p) => p.id === pid) ||
     unavailable(b, l, seat) ||
-    !availableSeats(l.classId).some(
-      (s) => s.coach === seat.coach && s.number === seat.number,
-    )
+    !legSeats(l).some((s) => s.coach === seat.coach && s.number === seat.number)
   )
     return b;
   if (
@@ -374,10 +533,11 @@ export function changeLeg(b: Booking, leg: Leg): Booking {
     old.train.from === leg.train.from &&
     old.train.to === leg.train.to &&
     old.train.date === leg.train.date &&
-    old.classId === leg.classId
+    old.classId === leg.classId &&
+    JSON.stringify(old.offer) === JSON.stringify(leg.offer)
   )
     return b;
-  return {
+  const next: Booking = {
     ...b,
     legs: [...b.legs.filter((l) => l.id !== leg.id), leg].sort((a) =>
       a.id === "outbound" ? -1 : 1,
@@ -395,6 +555,8 @@ export function changeLeg(b: Booking, leg: Leg): Booking {
     status: "draft",
     reference: "",
   };
+  delete next.recoveryNotice;
+  return next;
 }
 export const passengerErrors = (b: Booking) => {
   const e: Record<string, string> = {};
@@ -415,15 +577,22 @@ export function seatsComplete(b: Booking) {
     const seen = new Set();
     return b.passengers.every((p) => {
       const s = b.assignments[seatKey(l.id, p.id)];
-      if (!s || unavailable(b, l, s) || seen.has(`${s.coach}:${s.number}`))
+      if (
+        !s ||
+        unavailable(b, l, s) ||
+        !legSeats(l).some(
+          (v) => v.coach === s.coach && v.number === s.number,
+        ) ||
+        seen.has(`${s.coach}:${s.place?.physicalId ?? s.number}`)
+      )
         return false;
-      seen.add(`${s.coach}:${s.number}`);
+      seen.add(`${s.coach}:${s.place?.physicalId ?? s.number}`);
       return true;
     });
   });
 }
 export function earliestStep(b: Booking): number {
-  if (Object.keys(searchErrors(b.search)).length) return 0;
+  if (Object.keys(searchErrors(b.search, b.status === "paid")).length) return 0;
   if (b.legs.length !== (b.search.trip === "return" ? 2 : 1)) return 1;
   const o = b.legs.find((l) => l.id === "outbound"),
     r = b.legs.find((l) => l.id === "return");
@@ -440,11 +609,14 @@ export function earliestStep(b: Booking): number {
   )
     return 1;
   if (
-    b.legs.some(
-      (l) =>
-        !classes.some(
-          (c) => c.id === l.classId && c.capacity >= b.passengers.length,
-        ),
+    b.legs.some((l) =>
+      l.offer
+        ? !validOffer(l) ||
+          !Number.isFinite(fare(l)) ||
+          legSeats(l).length < b.passengers.length
+        : !legacyClasses.some(
+            (c) => c.id === l.classId && c.capacity >= b.passengers.length,
+          ),
     )
   )
     return 2;
@@ -499,7 +671,7 @@ export function restore(raw: string): Booking {
     return fail();
   if (
     !validDate(s.date) ||
-    s.date < today() ||
+    (b.status !== "paid" && s.date < today()) ||
     typeof s.from !== "string" ||
     typeof s.to !== "string" ||
     typeof s.returnDate !== "string" ||
@@ -563,10 +735,10 @@ export function restore(raw: string): Booking {
         Object.entries(map).some(
           ([k, v]) =>
             !v ||
-            !["A", "B"].includes(v.coach) ||
+            !["A", "B", "C"].includes(v.coach) ||
             !Number.isInteger(v.number) ||
             v.number < 1 ||
-            v.number > 16 ||
+            v.number > (v.place ? 100 : 16) ||
             !b.legs.some((l) => l.id === k.split(":")[0]) ||
             !b.passengers.some((p) => p.id === k.split(":")[1]),
         ),
@@ -584,6 +756,25 @@ export function restore(raw: string): Booking {
   )
     return fail();
   // Retired choices need a fresh selection without discarding the saved booking.
+  for (const leg of b.legs) {
+    if (leg.offer && !validOffer(leg)) {
+      if (b.status === "paid") return fail();
+      delete leg.offer;
+      leg.classId = "";
+      b.assignments = Object.fromEntries(
+        Object.entries(b.assignments).filter(
+          ([k]) => !k.startsWith(`${leg.id}:`),
+        ),
+      );
+      b.suggested = Object.fromEntries(
+        Object.entries(b.suggested).filter(
+          ([k]) => !k.startsWith(`${leg.id}:`),
+        ),
+      );
+      b.recoveryNotice =
+        "A saved coach configuration or fare is outdated. Choose a class and places again for that leg; your traveller details and other leg are retained.";
+    }
+  }
   b.passengers.forEach((p) => {
     if ((p.gender as string | undefined) === "other") delete p.gender;
   });

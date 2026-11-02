@@ -66,6 +66,8 @@ export function parseImportFile(content: string, csv: boolean): unknown[] {
   }) as Record<string, string>[];
   const jsonFields = new Set([
     "aliases",
+    "accommodationModes",
+    "sourceCodes",
     "active",
     "provenance",
     "fieldSources",

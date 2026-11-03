@@ -1,11 +1,12 @@
 import { loadEnvConfig } from "@next/env";
-import { randomBytes, randomInt } from "node:crypto";
+import { randomBytes, randomInt, randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { database, closeDatabase } from "../src/server/db/mongodb";
 import { checkoutFixture } from "../tests/fixtures/checkout";
 import { addDays, today, trains, recommend } from "../src/lib/booking";
 import { sampleCoachServices, serviceOffers } from "../src/lib/coach-layouts";
+import { ticketDocument } from "../src/lib/ticket-document";
 async function main() {
   loadEnvConfig(process.cwd());
   if (process.env.NODE_ENV === "production" || !process.argv.includes("--run"))
@@ -69,6 +70,7 @@ async function main() {
     ok("signed-out pre-payment pages remain public");
     assert.equal((await guest.request("/booking/payment")).status, 307);
     assert.equal((await guest.action("checkout")).status, 401);
+    assert.equal((await guest.request("/api/payments", {})).status, 401);
     assert.equal((await guest.action("complete-simulation")).status, 401);
     ok("direct payment route and server completion reject guests");
     const b = checkoutFixture(),
@@ -274,6 +276,75 @@ async function main() {
     ok(
       "private development mail verifies email; recovery resets password once and revokes sessions",
     );
+    // Explicit local fixture to exercise HTTP ticket/status ownership. Not a provider payment.
+    const fixtureId = randomUUID();
+    const fixtureSnapshot = {
+      ...heldSnapshot,
+      status: "paid" as const,
+      reference: `DFY-${randomBytes(4).toString("hex").toUpperCase()}`,
+      accountBookingId: fixtureId,
+    };
+    assert.ok(ticketDocument(fixtureSnapshot));
+    await db.collection("booking_drafts_v1").insertOne({
+      _id: fixtureId as never,
+      version: 1,
+      tokenHash: randomBytes(32).toString("hex"),
+      ownerId: String(user._id),
+      snapshot: fixtureSnapshot,
+      state: "completed",
+      holdExpiresAt: null,
+      inventory: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lockUntil: new Date(0),
+      completedAt: new Date(),
+      qaFixture: "phase6-local-not-provider",
+    });
+    assert.equal(
+      (await guest.request(`/api/account/bookings/${fixtureId}`)).status,
+      200,
+    );
+    assert.equal(
+      (await guest.request(`/account/bookings/${fixtureId}`)).status,
+      200,
+    );
+    assert.equal(
+      (await other.request(`/api/account/bookings/${fixtureId}`)).status,
+      404,
+    );
+    assert.equal(
+      (await other.request(`/account/bookings/${fixtureId}`)).status,
+      404,
+    );
+    assert.equal(
+      (await stranger.request(`/api/account/bookings/${fixtureId}`)).status,
+      401,
+    );
+    const attemptId = randomBytes(32).toString("hex");
+    await db.collection("sandbox_payment_attempts_v1").insertOne({
+      _id: attemptId as never,
+      ownerId: String(user._id),
+      draftId: fixtureId,
+      state: "succeeded",
+      expiresAt: new Date(Date.now() + 60000),
+      qaFixture: "phase6-local-not-provider",
+    });
+    assert.equal(
+      (await guest.request(`/api/payments/${attemptId}`)).status,
+      200,
+    );
+    assert.equal(
+      (await other.request(`/api/payments/${attemptId}`)).status,
+      404,
+    );
+    assert.equal(
+      (await stranger.request(`/api/payments/${attemptId}`)).status,
+      401,
+    );
+    ok(
+      "explicit local fixture: account ticket/print and payment status reject guests and wrong owners over HTTP",
+    );
+
     await db
       .collection("auth_session")
       .updateMany(
@@ -308,6 +379,8 @@ async function main() {
           checks: checks.length,
           qaAccountsCreated: 2,
           completedSampleBookings: 0,
+          explicitLocalTicketFixtures: 1,
+          providerPaidBookings: 0,
           mode: "development only; no provider, email delivery or real charge",
         },
         null,

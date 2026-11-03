@@ -1,14 +1,24 @@
 "use client";
 import Image from "next/image";
+import { useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { money, prettyDate, type Booking } from "@/lib/booking";
 import { ticketDocument } from "@/lib/ticket-document";
 
+const subscribeToPrintTarget = () => () => {};
+const browserPrintTarget = () => document.body;
+const serverPrintTarget = () => null;
+
 /** A body-level sibling avoids inherited grids, sticky panels and blank print gaps. */
 export default function TicketPrint({ booking }: { booking: Booking }) {
+  const target = useSyncExternalStore(
+    subscribeToPrintTarget,
+    browserPrintTarget,
+    serverPrintTarget,
+  );
   const ticket = ticketDocument(booking);
-  if (!ticket) return null;
-  return createPortal(<TicketDocumentView ticket={ticket} />, document.body);
+  if (!ticket || !target) return null;
+  return createPortal(<TicketDocumentView ticket={ticket} />, target);
 }
 
 export function TicketDocumentView({

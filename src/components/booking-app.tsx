@@ -1827,9 +1827,10 @@ export default function BookingApp({
                 </button>
               </div>
               <p className="fineprint" role="status">
-                {busy
-                  ? "Please keep this page open while the test payment is processed."
-                  : ""}
+                {busy &&
+                  (index === 5
+                    ? "Saving your journey and checking your selected places."
+                    : "Opening Safepay sandbox checkout.")}
               </p>
             </section>
             <aside>

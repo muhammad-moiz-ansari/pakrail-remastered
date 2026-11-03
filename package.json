@@ -16,7 +16,9 @@
     "careers:import": "tsx scripts/careers.ts",
     "coaches:seed": "tsx scripts/coaches.ts",
     "auth:mail": "tsx scripts/auth-mail.ts",
-    "accounts:check": "tsx scripts/check-accounts.ts --run"
+    "accounts:check": "tsx scripts/check-accounts.ts --run",
+    "predev": "node scripts/prepare-map.mjs",
+    "prebuild": "node scripts/prepare-map.mjs"
   },
   "dependencies": {
     "@better-auth/mongo-adapter": "1.7.15",
@@ -25,6 +27,7 @@
     "cheerio": "^1.2.0",
     "csv-parse": "^7.0.3",
     "lucide-react": "^0.468.0",
+    "maplibre-gl": "^6.16.0",
     "mongodb": "^7.8.0",
     "next": "^16.0.0",
     "react": "^19.2.0",

@@ -7,3 +7,6 @@ test-results/
 .env*
 !.env.example
 .local/
+
+# Generated from the pinned maplibre package by predev/prebuild
+/public/vendor/maplibre/

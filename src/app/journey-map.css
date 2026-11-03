@@ -1,0 +1,68 @@
+.journey-map-panel {
+  min-width: 0;
+  margin-bottom: 20px;
+}
+.journey-map-panel h2 {
+  font-family: var(--font-display), Georgia, serif;
+}
+.journey-map-stations {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  margin: 20px 0;
+}
+.journey-map-stations li {
+  font-size: 13px;
+}
+.journey-map-stations b {
+  display: block;
+  color: var(--brand-primary);
+  margin-bottom: 3px;
+}
+.journey-map-canvas {
+  height: 300px;
+  margin-top: 16px;
+  border-radius: 8px;
+  isolation: isolate;
+  z-index: 0;
+}
+.journey-marker {
+  background: var(--brand-primary);
+  color: white;
+  border: 2px solid white;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 24px;
+  font-weight: bold;
+  box-shadow: 0 1px 5px #0005;
+}
+.journey-map-panel .subtle {
+  margin-top: 16px;
+  font-size: 12px;
+}
+.journey-map-panel .maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
+@media (min-width: 961px) {
+  .journey-map-panel {
+    position: sticky;
+    top: 20px;
+  }
+}
+@media (max-width: 600px) {
+  .journey-map-canvas {
+    height: 300px;
+  }
+}
+
+.journey-marker {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  cursor: pointer;
+}
+.journey-map-canvas canvas:focus-visible {
+  outline: 3px solid var(--brand-primary);
+  outline-offset: -3px;
+}

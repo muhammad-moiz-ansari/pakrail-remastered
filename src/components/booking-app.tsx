@@ -1,4 +1,5 @@
 "use client";
+import JourneyMap from "./journey-map";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -11,7 +12,6 @@ import {
   Clock,
   Info,
   LockKeyhole,
-  MapPin,
   Plus,
   Printer,
   ShieldCheck,
@@ -937,7 +937,9 @@ export default function BookingApp({
                 )}
               </section>
               <aside>
-                <RoutePreview
+                <JourneyMap
+                  key={legId + b.search.from + b.search.to}
+                  context={`${legId === "outbound" ? "Outbound" : "Return"}  -  ${selected?.name ?? "Choose a train to preview"}`}
                   search={b.search}
                   from={legId === "outbound" ? b.search.from : b.search.to}
                   to={legId === "outbound" ? b.search.to : b.search.from}
@@ -1960,36 +1962,6 @@ export default function BookingApp({
 }
 function CalendarIcon() {
   return <Clock size={16} />;
-}
-function RoutePreview({
-  from,
-  to,
-  search,
-}: {
-  from: string;
-  to: string;
-  search: Search;
-}) {
-  return (
-    <div className="panel route-preview">
-      <span className="eyebrow">YOUR JOURNEY AT A GLANCE</span>
-      <h2>Route summary</h2>
-      <div className="route-placeholder">
-        <div className="route-stations">
-          <span>
-            <i />
-            {station(from, search)}
-          </span>
-          <span>
-            <i />
-            {station(to, search)}
-          </span>
-        </div>
-        <MapPin size={58} strokeWidth={1} />
-      </div>
-      <p>Your origin and destination, together in one view.</p>
-    </div>
-  );
 }
 function LegTabs({
   b,

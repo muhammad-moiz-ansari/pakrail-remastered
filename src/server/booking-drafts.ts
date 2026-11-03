@@ -80,6 +80,21 @@ export class DraftStore {
         assertDraftAccess(current.ownerId, userId);
         if (current.state !== "draft")
           throw new CheckoutError("COMPLETED", "Start a new booking.");
+        const pending = await this.db
+          .collection("sandbox_payment_attempts_v1")
+          .findOne({
+            draftId: id,
+            state: { $in: ["creating", "pending"] },
+            expiresAt: { $gt: new Date() },
+          });
+        if (
+          pending &&
+          JSON.stringify(snapshot) !== JSON.stringify(current.snapshot)
+        )
+          throw new CheckoutError(
+            "PAYMENT_PENDING",
+            "Checkout is pending. Wait for its status or hold expiry before changing this draft.",
+          );
         let changed = false;
         if (current.inventory.length) {
           try {
@@ -238,8 +253,8 @@ export class DraftStore {
       );
     return row;
   }
-  async completeSimulation(token: string | undefined, userId: string) {
-    const existing = await this.current(token, userId);
+  async completePayment(id: string, userId: string) {
+    const existing = await this.drafts().findOne({ _id: id, ownerId: userId });
     if (!existing || existing.ownerId !== userId)
       throw new CheckoutError(
         "FORBIDDEN",

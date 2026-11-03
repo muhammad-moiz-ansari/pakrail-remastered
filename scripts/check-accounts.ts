@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { database, closeDatabase } from "../src/server/db/mongodb";
 import { checkoutFixture } from "../tests/fixtures/checkout";
-import { addDays, today, trains, recommend, pricing } from "../src/lib/booking";
+import { addDays, today, trains, recommend } from "../src/lib/booking";
 import { sampleCoachServices, serviceOffers } from "../src/lib/coach-layouts";
 async function main() {
   loadEnvConfig(process.cwd());
@@ -173,7 +173,7 @@ async function main() {
     other.cookies.set("pakrail_draft", guest.cookies.get("pakrail_draft")!);
     assert.equal((await other.action("claim")).status, 403);
     assert.equal((await other.action("checkout")).status, 403);
-    assert.equal((await other.action("complete-simulation")).status, 403);
+    assert.equal((await other.action("complete-simulation")).status, 400);
     ok(
       "cross-account claim, checkout and completion denied even with the draft capability",
     );
@@ -195,33 +195,10 @@ async function main() {
     ok(
       "expired hold survives login/claim without extension; explicit availability recheck recovers the same places",
     );
-    result = await guest.action("complete-simulation");
-    assert.equal(result.status, 200);
-    assert.equal(result.data.snapshot.status, "paid");
-    const reference = result.data.snapshot.reference;
-    assert.deepEqual(pricing(result.data.snapshot), pricing(snapshot));
-    assert.equal(
-      (await guest.action("complete-simulation")).data.snapshot.reference,
-      reference,
-    );
-    assert.equal(
-      (await guest.request(`/api/account/bookings/${draftId}`)).status,
-      200,
-    );
-    assert.equal(
-      (await other.request(`/api/account/bookings/${draftId}`)).status,
-      404,
-    );
-    assert.equal(
-      (await stranger.request(`/api/account/bookings/${draftId}`)).status,
-      401,
-    );
-    assert.equal(
-      (await other.request(`/account/bookings/${draftId}`)).status,
-      404,
-    );
+    assert.equal((await guest.action("complete-simulation")).status, 400);
+    assert.equal((await guest.request("/api/payments", {})).status, 503);
     ok(
-      "authenticated simulation finalizes once, totals stay correct and account ticket queries enforce ownership",
+      "simulation bypass removed; unconfigured gateway fails closed without a paid booking",
     );
     const user = await db.collection("auth_user").findOne({ email });
     assert.ok(user);
@@ -330,7 +307,7 @@ async function main() {
         {
           checks: checks.length,
           qaAccountsCreated: 2,
-          completedSampleBookings: 1,
+          completedSampleBookings: 0,
           mode: "development only; no provider, email delivery or real charge",
         },
         null,

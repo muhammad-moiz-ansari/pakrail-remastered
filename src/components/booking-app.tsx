@@ -512,10 +512,14 @@ export default function BookingApp({
     setBusy(true);
     setError("");
     try {
-      const result = await draftRequest("complete-simulation");
-      if (!result) throw Error("Your booking could not be completed.");
-      save(result.snapshot);
-      router.push(`/account/bookings/${result.id}`);
+      const response = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const result = await response.json();
+      if (!response.ok) throw Error(result.error);
+      window.location.assign(result.url);
     } catch (e) {
       setError(
         e instanceof Error
@@ -1735,17 +1739,17 @@ export default function BookingApp({
                     </p>
                   )}
                   <p>
-                    No money will be charged. No card or bank details are
-                    needed.
+                    Sandbox only. Use provider-published test instruments; never
+                    use real card details.
                   </p>
                   <div className="mock-method">
                     <span>
-                      <Check size={18} /> Simulated payment method
+                      <Check size={18} /> Safepay hosted checkout · Sandbox
                     </span>
                     <ShieldCheck size={21} />
                   </div>
                   <small>
-                    Test payment confirmation for your booking summary.
+                    Card details are entered only on Safepay’s sandbox checkout.
                   </small>
                 </article>
               )}
@@ -1814,7 +1818,7 @@ export default function BookingApp({
                       Proceed to payment <ArrowRight size={17} />
                     </>
                   ) : busy ? (
-                    "Processing test payment…"
+                    "Opening sandbox checkout…"
                   ) : (
                     `${error ? "Retry payment" : "Pay"} ${money(totals.total)} — test`
                   )}

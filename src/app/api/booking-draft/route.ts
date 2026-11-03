@@ -82,11 +82,6 @@ export async function POST(request: Request) {
         draftView(await store.checkout(token, session.user.id)),
         { headers },
       );
-    if (body.action === "complete-simulation")
-      return Response.json(
-        draftView(await store.completeSimulation(token, session.user.id)),
-        { headers },
-      );
     throw new CheckoutError("ACTION", "Choose a valid booking action.", 400);
   } catch (e) {
     return failure(e);

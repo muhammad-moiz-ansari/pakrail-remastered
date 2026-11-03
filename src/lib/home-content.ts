@@ -92,7 +92,6 @@ export const destinations = [
     position: "center 48%",
   },
 ];
-export const officialLinks = { careers: "https://pakrail.gov.pk/Career.aspx" };
 export const footerGroups = [
   {
     title: "About Pakistan Railways",
@@ -122,6 +121,7 @@ export const footerGroups = [
   {
     title: "Explore & resources",
     links: [
+      { label: "Photo gallery", href: "/gallery" },
       { label: "Station directory", href: "/information/stations" },
       { label: "Image credits", href: "/information/credits" },
       { label: "Sitemap", href: "/information/sitemap" },

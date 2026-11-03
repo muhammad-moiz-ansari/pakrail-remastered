@@ -10,6 +10,7 @@ const navigation = [
   { id: "destinations", label: "Destinations", href: "/#destinations" },
   { id: "travel-classes", label: "Travel classes", href: "/#travel-classes" },
   { id: "about", label: "About us", href: "/#about" },
+  { id: "gallery", label: "Gallery", href: "/gallery" },
   { id: "help", label: "Help", href: "/information/help" },
 ];
 export default function SiteHeader() {

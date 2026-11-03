@@ -6,6 +6,7 @@ import "./careers.css";
 import "./coaches.css";
 import "./ticket-print.css";
 import "./account.css";
+import "./gallery.css";
 import localFont from "next/font/local";
 import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";

@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { stations } from "@/lib/booking";
 import PeoplePage from "@/components/people-page";
 import { informationPages, isInformationTopic } from "@/lib/site-routes";
+import { galleryPhotos, publishedGallery } from "@/lib/gallery";
 export function generateStaticParams() {
   return Object.keys(informationPages).map((topic) => ({ topic }));
 }
@@ -199,6 +200,9 @@ export default async function Information({
               <li>
                 <Link href="/information/journey">The rail journey</Link>
               </li>
+              <li>
+                <Link href="/gallery">Photo gallery</Link>
+              </li>
             </ul>
           </section>
           <section className="information-block">
@@ -232,6 +236,22 @@ export default async function Information({
             Photographs are displayed with responsive CSS cropping; the original
             downloaded files are otherwise unchanged.
           </p>
+          <section className="information-block" id="gallery-credits">
+            <h2>Photo gallery</h2>
+            <p>
+              Real railway photographs, with responsive cropping and
+              compression. Historical photographs do not describe current
+              services.
+            </p>
+            <ul className="credits-list">
+              {publishedGallery(galleryPhotos).map((photo) => (
+                <li key={photo.id}>
+                  <a href={photo.sourceUrl}>{photo.title}</a> — {photo.credit},{" "}
+                  <a href={photo.licenseUrl}>{photo.license}</a>.
+                </li>
+              ))}
+            </ul>
+          </section>
           <section className="information-block">
             <h2>Pakistan and its railway heritage</h2>
             <ul className="credits-list">

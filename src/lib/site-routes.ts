@@ -46,6 +46,7 @@ const bookingPages: Record<string, string> = {
 export function breadcrumbsForPath(pathname: string): BreadcrumbItem[] {
   const home = { label: "Pakistan Railways", href: "/" };
   const normalized = pathname === "/" ? pathname : pathname.replace(/\/$/, "");
+  if (normalized === "/gallery") return [home, { label: "Gallery" }];
   if (normalized === "/careers")
     return [home, ancestors.about, { label: "Careers" }];
   if (normalized === "/account") return [home, { label: "My account" }];

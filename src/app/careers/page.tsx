@@ -4,7 +4,6 @@ import AboutCover from "@/components/about-cover";
 import CareersRetry from "@/components/careers-retry";
 import {
   CAREER_PAGE_SIZE,
-  CAREERS_SOURCE,
   careerFilters,
   careerHref,
   careerLabels,
@@ -132,14 +131,8 @@ export default async function CareersPage({
         {!data ? (
           <div className="careers-message" role="alert">
             <h2>Career notices are temporarily unavailable</h2>
-            <p>
-              Please try again shortly, or check the official Pakistan Railways
-              source.
-            </p>
-            <CareersRetry />{" "}
-            <a href={CAREERS_SOURCE} target="_blank" rel="noopener noreferrer">
-              Official careers source (opens a new tab)
-            </a>
+            <p>Please try again shortly.</p>
+            <CareersRetry />
           </div>
         ) : (
           <>
@@ -214,13 +207,6 @@ export default async function CareersPage({
                         Posted: {notice.postedDateRaw || "Not provided"} ·
                         Closing: {notice.closingDateRaw || "Not provided"}
                       </p>
-                      <a
-                        href={notice.sourceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Original source listing (opens a new tab)
-                      </a>
                     </details>
                     <div className="career-advertisements">
                       {notice.advertisements.length ? (
@@ -312,15 +298,7 @@ export default async function CareersPage({
               </nav>
             )}
             <p className="careers-source">
-              Source:{" "}
-              <a
-                href={CAREERS_SOURCE}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Pakistan Railways (opens a new tab)
-              </a>
-              .{" "}
+              Source: Pakistan Railways .{" "}
               {data.lastSyncedAt
                 ? `Last synced ${new Date(data.lastSyncedAt).toLocaleString("en-GB", { timeZone: "Asia/Karachi", dateStyle: "medium", timeStyle: "short" })} PKT. `
                 : ""}

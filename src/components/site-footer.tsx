@@ -21,9 +21,9 @@ export default function SiteFooter() {
               <span aria-hidden="true">Pakistan Railways</span>
             </Link>
             <p>
-              Across cities. Through landscapes.
+              An independent student project.
               <br />
-              Connecting you to the places that matter.
+              Not affiliated with Pakistan Railways.
             </p>
           </div>
           <div className="footer-groups">

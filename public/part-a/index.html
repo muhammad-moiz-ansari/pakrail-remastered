@@ -86,20 +86,19 @@
   <script>
     const names = [
       "Search",
-      "Trains",
-      "Classes",
       "Passengers",
+      "Rank and ticket type",
       "Seats",
-      "Review",
+      "Ticket preview",
       "Payment",
-      "Confirmation",
+      "Booking confirmed",
     ];
     let n = 0;
     const content = [
-      `<label>Departure <input placeholder="Lahore Junction"></label><label>Arrival <input placeholder="Rawalpindi"></label><label>Date <input type="date"></label><label>Adults <select><option>1</option><option>2</option><option>3</option></select></label>`,
-      `<div class="box">Demo train · 08:00 → 12:30 · PKR 2,400 <label><input type="radio" name="train"> Select train</label></div><button onclick="error()">Explore no-results branch</button><div class="box">Route preview — placeholder</div>`,
-      `<label><input type="radio" name="class"> Economy · PKR 2,400</label><label><input type="radio" name="class"> AC Standard · PKR 3,840</label><label><input type="radio" name="class"> Business · PKR 5,280</label>`,
+      `<label>Departure <input placeholder="Lahore Junction"></label><label>Arrival <input placeholder="Rawalpindi"></label><label>Date <input type="date"></label><label>Adults <select><option>1</option><option>2</option><option>3</option></select></label>
+      <div class="box">Demo train · 08:00 → 12:30 · PKR 2,400 <label><input type="radio" name="train"> Select train</label></div><button onclick="error()">Explore no-results branch</button><div class="box">Route preview — placeholder</div>`,
       `<label>Passenger name <input placeholder="Fictional traveller"></label><label>Contact email <input type="email" placeholder="traveller@example.com"></label>`,
+      `<label><input type="radio" name="class"> Economy · PKR 2,400</label><label><input type="radio" name="class"> AC Standard · PKR 3,840</label><label><input type="radio" name="class"> Business · PKR 5,280</label>`,
       `<p>Suggested seats are selected. Choose a different seat to change.</p><div class="box">Coach A · [✓ Passenger 1] [Free] [Sold] [Free]</div><label>Alternative seat <select><option>A · 1</option><option>A · 2</option><option>B · 1</option></select></label><button onclick="error()">Explore seat-conflict branch</button>`,
       `<div class="box">Journey / train / class<br>Travellers / coach / seat<br>Contact / total</div><label>Optional voucher <input placeholder="DEMO10"></label>`,
       `<p>Demo payment — no money will be charged.</p><div class="box">Total: PKR 2,400</div><button onclick="error()">Explore payment-failure branch</button>`,
@@ -112,8 +111,9 @@
             `<button aria-current="${i === n ? "step" : "false"}" onclick="go(${i})">S${i + 1} ${s}</button>`,
         )
         .join("");
+      const isLastStep = n === names.length - 1;
       document.querySelector("#main").innerHTML =
-        `<small>Screen S${n + 1} / 8</small><h1>${names[n]}</h1>${content[n]}<hr><button onclick="go(${Math.max(0, n - 1)})">Back</button><button onclick="go(${n === 7 ? 0 : n + 1})">${n === 7 ? "Start new booking" : n === 6 ? "Pay — demo" : "Continue"}</button>`;
+        `<small>Screen S${n + 1} / ${names.length}</small><h1>${names[n]}</h1>${content[n]}<hr><button onclick="go(${Math.max(0, n - 1)})">Back</button><button onclick="go(${isLastStep ? 0 : n + 1})">${isLastStep ? "Start new booking" : names[n] === "Payment" ? "Pay — demo" : "Continue"}</button>`;
     }
     function go(i) {
       n = i;

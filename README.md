@@ -46,14 +46,14 @@ IA: **Proposed — awaiting card-sort validation**. See the [D4 checklist](docs/
 
 Select at `/demo`, then open the relevant booking step. **Normal** restores ordinary simulation; Reset clears the draft after confirmation.
 
-| Scenario        | Trigger                       | Recovery                                                      |
-| --------------- | ----------------------------- | ------------------------------------------------------------- |
-| No results      | Open results                  | Clear filters and retry / edit journey                        |
-| Search error    | Open results                  | Retry search restores Normal                                  |
-| Seat conflict   | Click Review booking on Seats | Replace the affected passenger’s outbound seat; others remain |
-| Payment failure | Click Pay once                | Retry succeeds with details retained                          |
+| Scenario        | Trigger                                                        | Recovery                                           |
+| --------------- | -------------------------------------------------------------- | -------------------------------------------------- |
+| No results      | Open results                                                   | Clear filters and retry / edit journey             |
+| Search error    | Open results                                                   | Retry search restores Normal                       |
+| Seat conflict   | Confirm outbound Coach A seat 4 or 6 in Economy or AC Standard | Choose another seat; other travellers keep theirs  |
+| Payment failure | Click Pay once                                                 | Retry succeeds with details retained               |
 
-For a seat conflict after a complete draft, open Seats through Edit/Back or `/booking/seats`, then Review. Generic Return to booking opens the earliest incomplete step, or Payment if all details are complete.
+For the seat conflict demo, select **Seat conflict** at `/demo` in the same tab as the booking. On Seats, select Traveller 1 and confirm outbound Coach A seat 4. The app marks it sold and asks for another seat. Confirm seat 6, then select Review booking. The first attempt at either trigger seat consumes the simulation until you activate it again. If your draft already has all details, open Seats through Edit/Back or `/booking/seats`.
 
 ## Architecture and scope
 

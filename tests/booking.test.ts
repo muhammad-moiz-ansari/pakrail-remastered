@@ -198,6 +198,36 @@ test("overnight return must depart after the outbound arrival", () => {
   assert.equal(returnValid(out, early), false);
   assert.equal(returnValid(out, late), true);
 });
+test("demo conflict triggers once on a designated outbound seat and preserves assignments", () => {
+  const b = { ...recommend(group(true)), scenario: "seat-conflict" as const };
+  const seat = { coach: "A", number: 4 };
+  assert.equal(chooseSeat(b, "return", "p0", seat).conflictHandled, false);
+  assert.equal(
+    chooseSeat({ ...b, scenario: "normal" }, "outbound", "p0", seat)
+      .conflictHandled,
+    false,
+  );
+
+  const conflicted = chooseSeat(b, "outbound", "p0", seat);
+  assert.deepEqual(conflicted.conflict, { legId: "outbound", seat });
+  const remaining = { ...b.assignments };
+  delete remaining["outbound:p0"];
+  assert.deepEqual(conflicted.assignments, remaining);
+  assert.equal(seatsComplete(conflicted), false);
+  assert.strictEqual(
+    chooseSeat(conflicted, "outbound", "p0", seat),
+    conflicted,
+  );
+
+  const replacement = { coach: "A", number: 6 };
+  const recovered = chooseSeat(conflicted, "outbound", "p0", replacement);
+  assert.deepEqual(recovered.assignments, {
+    ...b.assignments,
+    "outbound:p0": replacement,
+  });
+  assert.equal(seatsComplete(recovered), true);
+});
+
 test("seat conflict retains unaffected assignments and rejects unavailable replacement", () => {
   const b = recommend(group(true));
   const lost = b.assignments["outbound:p0"];

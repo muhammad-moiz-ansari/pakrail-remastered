@@ -102,6 +102,8 @@ export default function BookingApp({ step }: { step: string }) {
   const paymentRef = useRef(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const seatTrigger = useRef<HTMLButtonElement | null>(null);
+  const errorAlert = useRef<HTMLDivElement>(null);
+  const focusSeatError = useRef(false);
   const guardedStep = useRef("");
   const hydratedStep = useRef("");
   useEffect(() => {
@@ -177,7 +179,11 @@ export default function BookingApp({ step }: { step: string }) {
       dialog.current?.showModal();
     } else if (dialog.current?.open) {
       dialog.current.close();
-      seatTrigger.current?.focus();
+      (focusSeatError.current
+        ? errorAlert.current
+        : seatTrigger.current
+      )?.focus();
+      focusSeatError.current = false;
     }
   }, [candidate]);
   const ready = !!b;
@@ -303,24 +309,6 @@ export default function BookingApp({ step }: { step: string }) {
   };
   const validateSeats = () => {
     if (!b) return;
-    if (b.scenario === "seat-conflict" && !b.conflictHandled) {
-      const assignments = { ...b.assignments };
-      const pid = b.passengers[0].id;
-      const lost = assignments[seatKey("outbound", pid)];
-      delete assignments[seatKey("outbound", pid)];
-      save({
-        ...b,
-        assignments,
-        conflictHandled: true,
-        conflict: lost ? { legId: "outbound", seat: lost } : undefined,
-      });
-      setLegId("outbound");
-      setActivePid(pid);
-      setError(
-        `${b.passengers[0].name}’s outbound seat just became unavailable. Choose a replacement; your group’s other seats are retained.`,
-      );
-      return;
-    }
     if (!seatsComplete(b)) {
       setError(
         "Choose a seat for every traveller on both legs before continuing.",
@@ -478,7 +466,12 @@ export default function BookingApp({ step }: { step: string }) {
           </div>
         )}
         {error && (
-          <div className="alert error" role="alert" tabIndex={-1}>
+          <div
+            className="alert error"
+            role="alert"
+            tabIndex={-1}
+            ref={errorAlert}
+          >
             <Info size={18} />
             <span>{error}</span>
           </div>
@@ -1486,8 +1479,23 @@ export default function BookingApp({ step }: { step: string }) {
                     <button
                       className="button primary"
                       onClick={() => {
-                        save(chooseSeat(b, leg.id, active.id, candidate));
+                        const next = chooseSeat(
+                          b,
+                          leg.id,
+                          active.id,
+                          candidate,
+                        );
+                        save(next);
                         setCandidate(null);
+                        if (next.conflict !== b.conflict) {
+                          focusSeatError.current = true;
+                          setNotice("");
+                          setError(
+                            `Seat taken. Coach ${candidate.coach}, seat ${candidate.number} just became unavailable. Choose another seat for ${active.name}. Your group’s other seats are unchanged.`,
+                          );
+                          return;
+                        }
+                        setError("");
                         setNotice(
                           `Seat ${candidate.coach}${candidate.number} assigned to ${active.name}.`,
                         );
@@ -1832,7 +1840,7 @@ export default function BookingApp({ step }: { step: string }) {
                   {
                     id: "seat-conflict",
                     name: "Seat conflict",
-                    text: "First review attempt releases Traveller 1’s outbound seat; assign a replacement.",
+                    text: "In outbound Economy or AC Standard, confirm Coach A seat 4 or 6 to simulate a seat being taken. Then choose another seat. Triggers once per activation.",
                   },
                   {
                     id: "payment-failure",

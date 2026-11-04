@@ -321,11 +321,31 @@ export function chooseSeat(
     )
   )
     return b;
+  const key = seatKey(leg, pid);
+  if (
+    b.scenario === "seat-conflict" &&
+    !b.conflictHandled &&
+    l.id === "outbound" &&
+    seat.coach === "A" &&
+    [4, 6].includes(seat.number)
+  ) {
+    const assignments = { ...b.assignments };
+    const suggested = { ...b.suggested };
+    delete assignments[key];
+    delete suggested[key];
+    return {
+      ...b,
+      assignments,
+      suggested,
+      conflictHandled: true,
+      conflict: { legId: l.id, seat },
+    };
+  }
   return {
     ...b,
-    assignments: { ...b.assignments, [seatKey(leg, pid)]: seat },
+    assignments: { ...b.assignments, [key]: seat },
     suggested: Object.fromEntries(
-      Object.entries(b.suggested).filter(([k]) => k !== seatKey(leg, pid)),
+      Object.entries(b.suggested).filter(([k]) => k !== key),
     ),
   };
 }
